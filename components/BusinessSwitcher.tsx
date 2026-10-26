@@ -35,13 +35,15 @@ export default function BusinessSwitcher({
   }
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-1 sm:min-w-52 sm:flex-none">
-      <label className="text-xs font-semibold uppercase tracking-wide text-slate-600" htmlFor="business-switcher">
-        Business
+    <div className="flex min-w-0 flex-1 flex-col gap-1 sm:w-72 sm:flex-none">
+      <label className="flex items-baseline justify-between gap-2 text-xs font-bold uppercase tracking-wider text-slate-600" htmlFor="business-switcher">
+        <span>Business</span>
+        <span className="font-normal normal-case tracking-normal">
+          {ownedCount > businessLimit ? `${ownedCount} owned (plan allows ${businessLimit})` : `${ownedCount} of ${businessLimit} owned`}
+        </span>
       </label>
-      <p className="text-xs text-slate-600">{ownedCount > businessLimit ? `${ownedCount} owned (plan allows ${businessLimit})` : `${ownedCount} of ${businessLimit} owned businesses`}</p>
       <select
-        className="min-h-11 w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-800"
+        className="input w-full min-w-0"
         id="business-switcher"
         value={selectedId}
         onChange={handleChange}

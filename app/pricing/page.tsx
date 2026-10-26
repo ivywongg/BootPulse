@@ -3,6 +3,7 @@ import { setDemoPlan } from '../../lib/account-actions';
 import { getAuthenticatedUser } from '../../lib/auth';
 import { getUserPlan, isPlanName, PLAN_DETAILS, PLAN_LIMITS, type PlanName } from '../../lib/plans';
 import ActionForm from '../../components/ActionForm';
+import Logo from '../../components/Logo';
 
 export const metadata = { title: 'Demo plans' };
 
@@ -32,23 +33,23 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-12 text-slate-950">
+    <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-950 sm:px-6 sm:py-14">
       <div className="mx-auto max-w-6xl">
         <header className="text-center">
-          <a className="text-xl font-bold text-blue-900" href={user ? '/dashboard' : '/'}>BootPulse</a>
-          <h1 className="mt-6 text-4xl font-bold">Plans and limits</h1>
+          <a aria-label="BootPulse home" className="inline-block rounded-md" href={user ? '/dashboard' : '/'}><Logo size={34} /></a>
+          <h1 className="mt-8 text-3xl font-bold tracking-tight sm:text-4xl">Plans and limits</h1>
           <p className="mx-auto mt-4 max-w-2xl text-slate-700">Prices are fictional. Choose a demo plan to see how forecast length, scenarios and warnings change.</p>
-          <p className="mx-auto mt-4 inline-block rounded-md border border-blue-900 bg-white px-4 py-2 text-sm font-semibold text-blue-900">Assignment demo — no payment is collected</p>
+          <p className="notice notice-info mt-5 inline-block font-semibold">Assignment demo — no payment is collected</p>
         </header>
 
         {switched && isPlanName(switched) && switched === currentPlan ? (
-          <p className="mx-auto mt-6 max-w-2xl rounded-md border border-slate-300 bg-white p-4 text-center text-slate-900" role="status">
+          <p className="notice mx-auto mt-6 max-w-2xl text-center" role="status">
             Demo plan switched to {PLAN_DETAILS.find((plan) => plan.name === switched)?.label}. No purchase was made and your business data is unchanged.
           </p>
         ) : null}
 
         {pending && user ? (
-          <section aria-labelledby="confirm-heading" className="mx-auto mt-8 max-w-2xl rounded-lg border border-blue-900 bg-white p-6">
+          <section aria-labelledby="confirm-heading" className="card mx-auto mt-8 max-w-2xl border-blue-900">
             <h2 className="text-xl font-bold" id="confirm-heading">
               Switch to the {PLAN_DETAILS.find((plan) => plan.name === pending)?.label} demo plan?
             </h2>
@@ -61,8 +62,8 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
             ) : null}
             <ActionForm action={applyPlan} className="mt-5 flex flex-wrap gap-3">
               <input name="plan" type="hidden" value={pending} />
-              <button className="min-h-11 rounded-md bg-blue-900 px-4 font-semibold text-white hover:bg-blue-800 disabled:opacity-60" type="submit">Confirm demo plan</button>
-              <a className="inline-flex min-h-11 items-center rounded-md border border-slate-300 px-4 font-semibold text-slate-900 hover:bg-slate-100" href="/pricing">Cancel</a>
+              <button className="btn btn-primary" type="submit">Confirm demo plan</button>
+              <a className="btn btn-secondary" href="/pricing">Cancel</a>
             </ActionForm>
           </section>
         ) : null}
@@ -71,7 +72,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
           {PLAN_DETAILS.map((plan) => {
             const isCurrent = currentPlan === plan.name;
             return (
-              <article className={`flex flex-col rounded-xl border bg-white p-6 ${isCurrent ? 'border-blue-900 ring-2 ring-blue-100' : 'border-slate-200'}`} key={plan.name}>
+              <article className={`card flex flex-col ${isCurrent ? 'border-blue-900 ring-2 ring-blue-100' : ''}`} key={plan.name}>
                 <p className="text-sm font-semibold uppercase tracking-wide text-blue-900">{plan.label}</p>
                 <p className="mt-3 text-3xl font-bold">{plan.price}</p>
                 <p className="text-xs text-slate-600">Fictional price</p>
@@ -81,12 +82,12 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
                 </ul>
                 <div className="mt-auto pt-8">
                   {isCurrent ? (
-                    <p className="rounded-md bg-slate-100 px-4 py-3 text-center font-semibold text-slate-800">Current demo plan</p>
+                    <p className="flex min-h-11 items-center justify-center rounded-md bg-slate-100 px-4 text-center font-semibold text-slate-800">Current demo plan</p>
                   ) : !user ? (
-                    <a className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-blue-900 px-4 font-semibold text-blue-900 hover:bg-slate-100" href="/sign-up">Create an account to try</a>
+                    <a className="btn btn-secondary w-full" href="/sign-up">Create an account to try</a>
                   ) : (
                     <a
-                      className={`inline-flex min-h-11 w-full items-center justify-center rounded-md px-4 font-semibold ${plan.name === 'free' ? 'border border-slate-300 text-slate-900 hover:bg-slate-100' : 'bg-blue-900 text-white hover:bg-blue-800'}`}
+                      className={`btn w-full ${plan.name === 'free' ? 'btn-secondary' : 'btn-primary'}`}
                       href={`/pricing?confirm=${plan.name}`}
                     >
                       {plan.name === 'free' ? 'Return to Free' : `Try ${plan.label} demo`}

@@ -16,10 +16,10 @@ import { getBusinessPlan, getUserPlan, PLAN_LIMITS } from '../../../lib/plans';
 
 export const metadata = { title: 'Settings' };
 
-const inputClass = 'min-h-11 rounded-md border border-slate-300 bg-white px-3 font-normal';
-const labelClass = 'flex flex-col gap-1 font-semibold text-slate-800';
-const primaryButton = 'min-h-11 w-fit rounded-md bg-blue-900 px-4 font-semibold text-white hover:bg-blue-800 disabled:opacity-60';
-const card = 'rounded-lg border border-slate-200 bg-white p-6';
+const inputClass = 'input';
+const labelClass = 'field';
+const primaryButton = 'btn btn-primary';
+const card = 'card';
 
 const text = (formData: FormData, name: string) => String(formData.get(name) ?? '');
 
@@ -107,7 +107,7 @@ export default async function SettingsPage() {
         <p className="mt-3 text-lg font-semibold capitalize text-slate-900">{ownPlan}</p>
         <p className="mt-1 text-sm text-slate-700">Assignment demo — no payment is collected. Switching plans never deletes business data.</p>
         {!isOwner ? <p className="mt-2 text-sm text-slate-700">This business follows its owner&apos;s plan ({businessPlan}), not yours.</p> : null}
-        <a className="mt-3 inline-flex min-h-11 items-center font-semibold text-blue-900 underline" href="/pricing">Change demo plan</a>
+        <a className="btn btn-secondary mt-4" href="/pricing">Change demo plan</a>
       </section>
 
       {isOwner ? (
@@ -121,7 +121,7 @@ export default async function SettingsPage() {
                 <span>{collaborator.email}</span>
                 <ActionForm action={revoke} className="flex">
                   <input name="userId" type="hidden" value={collaborator.userId} />
-                  <button className="min-h-10 rounded-md border border-red-300 px-3 font-semibold text-red-800 hover:bg-red-50 disabled:opacity-60" type="submit">Revoke access</button>
+                  <button className="btn btn-danger-outline btn-sm" type="submit">Revoke access</button>
                 </ActionForm>
               </li>
             ))}
@@ -152,7 +152,7 @@ export default async function SettingsPage() {
       </section>
 
       {isOwner && accessible.length > 1 ? (
-        <section className="rounded-lg border border-red-200 bg-white p-6" aria-labelledby="delete-business-heading">
+        <section className="card card-danger" aria-labelledby="delete-business-heading">
           <h2 className="text-xl font-bold text-red-900" id="delete-business-heading">Delete this business</h2>
           <p className="mt-3 text-slate-700">Permanently deletes {business.name}, its items, scenarios and decisions, and removes access for its collaborators.</p>
           <ActionForm action={removeBusiness} className="mt-4 space-y-4">
@@ -160,12 +160,12 @@ export default async function SettingsPage() {
               <input className="mt-1 h-5 w-5" name="confirmation" required type="checkbox" value="delete" />
               <span>I understand that this business will be permanently deleted.</span>
             </label>
-            <button className="min-h-11 rounded-md bg-red-800 px-4 font-semibold text-white hover:bg-red-700 disabled:opacity-60" type="submit">Delete business</button>
+            <button className="btn btn-danger" type="submit">Delete business</button>
           </ActionForm>
         </section>
       ) : null}
 
-      <section className="rounded-lg border border-red-200 bg-white p-6" aria-labelledby="delete-account-heading">
+      <section className="card card-danger" aria-labelledby="delete-account-heading">
         <h2 className="text-xl font-bold text-red-900" id="delete-account-heading">Delete account and data</h2>
         <p className="mt-3 text-slate-700">Permanently deletes your sign-in account, demo plan and every business you own. Businesses shared with you are not affected. This cannot be undone.</p>
         <ActionForm action={removeAccount} className="mt-4 space-y-4">
@@ -173,7 +173,7 @@ export default async function SettingsPage() {
             <input className="mt-1 h-5 w-5" name="confirmation" required type="checkbox" value="delete" />
             <span>I understand that my BootPulse account and data will be permanently deleted.</span>
           </label>
-          <button className="min-h-11 rounded-md bg-red-800 px-4 font-semibold text-white hover:bg-red-700 disabled:opacity-60" type="submit">Delete account and data</button>
+          <button className="btn btn-danger" type="submit">Delete account and data</button>
         </ActionForm>
       </section>
     </div>

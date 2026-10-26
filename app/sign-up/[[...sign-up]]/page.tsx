@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import AuthForm from '../../../components/AuthForm';
+import AuthShell from '../../../components/AuthShell';
 import PicsStatement from '../../../components/PicsStatement';
 import { signUp } from '../../auth-actions';
 import { CONSENT_VERSION } from '../../../lib/auth-validation';
@@ -9,31 +10,36 @@ import { CONSENT_VERSION } from '../../../lib/auth-validation';
 export default function SignUpPage() {
   const [consented, setConsented] = useState(false);
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-6 py-12">
-      <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">BootPulse</p>
-      <h1 className="text-3xl font-bold text-slate-950">Create your account</h1>
+    <AuthShell
+      description="Read the statement below, accept it, then enter your details."
+      footer={<>Already have an account? <a className="font-semibold text-blue-900 underline underline-offset-4" href="/login">Sign in</a></>}
+      title="Create your account"
+      width="wide"
+    >
       <PicsStatement />
-      <label className="mt-6 flex items-start gap-3 text-sm text-slate-900" htmlFor="consent">
-        <input className="mt-1 h-5 w-5 shrink-0 accent-blue-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-800" id="consent" name="consent" type="checkbox" checked={consented} onChange={(event) => setConsented(event.target.checked)} />
+      <label className="check mt-6" htmlFor="consent">
+        <input checked={consented} id="consent" name="consent" onChange={(event) => setConsented(event.target.checked)} type="checkbox" />
         <span>I have read and consent to the Personal Information Collection Statement.</span>
       </label>
       {consented ? (
-        <AuthForm action={signUp} className="mt-8 space-y-5">
-          <h2 className="text-xl font-semibold text-slate-950">Account details</h2>
+        <AuthForm action={signUp} className="mx-auto mt-8 max-w-sm space-y-5 border-t border-slate-200 pt-8">
+          <h2 className="section-title">Account details</h2>
           <input name="consent" type="hidden" value="accepted" />
           <input name="consentVersion" type="hidden" value={CONSENT_VERSION} />
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-900" htmlFor="email">Email address</label>
-            <input className="min-h-11 w-full rounded-md border border-slate-300 px-3 text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-blue-800" id="email" name="email" type="email" autoComplete="email" maxLength={254} required />
+          <div className="field">
+            <label htmlFor="email">Email address</label>
+            <input autoComplete="email" className="input" id="email" maxLength={254} name="email" required type="email" />
           </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-900" htmlFor="password">Password</label>
-            <input className="min-h-11 w-full rounded-md border border-slate-300 px-3 text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-blue-800" id="password" name="password" type="password" autoComplete="new-password" minLength={8} maxLength={128} required />
+          <div className="field">
+            <label htmlFor="password">Password</label>
+            <input autoComplete="new-password" className="input" id="password" maxLength={128} minLength={8} name="password" required type="password" />
+            <p className="hint">At least 8 characters.</p>
           </div>
-          <button className="min-h-11 w-full rounded-md bg-blue-900 px-4 font-semibold text-white hover:bg-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-800" type="submit">Create account</button>
+          <button className="btn btn-primary mt-2 w-full" type="submit">Create account</button>
         </AuthForm>
-      ) : <p className="mt-6 rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-700">Please read the statement and tick the consent box to continue.</p>}
-      <p className="mt-8 text-sm text-slate-700">Already have an account? <a className="font-semibold text-blue-900 underline" href="/login">Sign in</a></p>
-    </main>
+      ) : (
+        <p className="notice mt-6">Tick the box to continue.</p>
+      )}
+    </AuthShell>
   );
 }

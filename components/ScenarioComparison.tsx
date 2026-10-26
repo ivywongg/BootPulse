@@ -51,12 +51,12 @@ export default function ScenarioComparison({
       </div>
 
       {selectedScenarios.length === 0 ? (
-        <p className="rounded-md border border-dashed border-slate-300 p-6 text-slate-700">Select a scenario to compare.</p>
+        <p className="empty">Select a scenario to compare.</p>
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-3">
             {selectedScenarios.map((scenario) => (
-              <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm" key={scenario.id}>
+              <article className="card" key={scenario.id}>
                 <h3 className="text-lg font-bold text-slate-950">{scenario.name}</h3>
                 <dl className="mt-4 space-y-3">
                   <div>
@@ -74,7 +74,7 @@ export default function ScenarioComparison({
             ))}
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="card card-sm">
             <CashFlowChart currency={currency} data={chartData} lines={chartLines} />
           </div>
         </>

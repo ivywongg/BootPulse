@@ -27,10 +27,10 @@ export default function AuthForm({ action, children, className }: AuthFormProps)
         setValidationError(field.validationMessage || 'Check the entered values.');
       }}
     >
-      <fieldset className="contents" disabled={pending}>{children}</fieldset>
+      <fieldset className="m-0 grid min-w-0 gap-5 border-0 p-0" disabled={pending}>{children}</fieldset>
       {pending ? <p className="text-sm text-slate-700" role="status">Working…</p> : null}
-      {error ? <p className="text-sm font-semibold text-red-800" id={errorId} role="alert">{error}</p> : null}
-      {!error && state.message ? <p className="rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-900" role="status">{state.message}</p> : null}
+      {error ? <p className="alert" id={errorId} role="alert">{error}</p> : null}
+      {!error && state.message ? <p className="notice notice-info" role="status">{state.message}</p> : null}
     </form>
   );
 }

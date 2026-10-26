@@ -15,9 +15,9 @@ import { createCustomScenario, deleteCustomScenario, updateScenarioAssumptions }
 
 export const metadata = { title: 'Scenarios' };
 
-const inputClass = 'min-h-11 rounded-md border border-slate-300 bg-white px-3 font-normal';
-const labelClass = 'flex flex-col gap-1 font-semibold text-slate-800';
-const primaryButton = 'min-h-11 rounded-md bg-blue-900 px-4 font-semibold text-white hover:bg-blue-800 disabled:opacity-60';
+const inputClass = 'input';
+const labelClass = 'field';
+const primaryButton = 'btn btn-primary';
 
 function formText(formData: FormData, name: string) {
   const value = formData.get(name);
@@ -114,14 +114,14 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
         <section aria-labelledby="scenario-formulas">
           <h2 className="text-xl font-bold text-slate-950" id="scenario-formulas">How scenarios work</h2>
           <ul className="mt-3 grid gap-3 text-sm text-slate-700 md:grid-cols-3">
-            <li className="rounded-md border border-slate-200 bg-white p-4">Revenue in month m = base revenue × (1 + price change) × (1 − loss) × (1 + growth)<sup>m−1</sup>, rounded to the nearest cent.</li>
-            <li className="rounded-md border border-slate-200 bg-white p-4">Costs = base costs + extra recurring cost, plus the extra one-off cost in its chosen month.</li>
-            <li className="rounded-md border border-slate-200 bg-white p-4">Runway = full months before projected cash first falls below zero. The forecast is {limits.forecastMonths} months on this business&apos;s plan.</li>
+            <li className="notice">Revenue in month m = base revenue × (1 + price change) × (1 − loss) × (1 + growth)<sup>m−1</sup>, rounded to the nearest cent.</li>
+            <li className="notice">Costs = base costs + extra recurring cost, plus the extra one-off cost in its chosen month.</li>
+            <li className="notice">Runway = full months before projected cash first falls below zero. The forecast is {limits.forecastMonths} months on this business&apos;s plan.</li>
           </ul>
         </section>
 
         <section aria-label="Scenario comparison">
-          <form className="flex flex-wrap items-center gap-4 rounded-lg border border-slate-200 bg-white p-4" method="get">
+          <form className="card card-sm flex flex-wrap items-center gap-4" method="get">
             <fieldset className="flex flex-wrap gap-4">
               <legend className="sr-only">Choose up to three scenarios</legend>
               {usable.map((scenario) => (
@@ -131,7 +131,7 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
                 </label>
               ))}
             </fieldset>
-            <button className="min-h-11 rounded-md border border-slate-300 bg-white px-4 font-semibold text-slate-900 hover:bg-slate-100" type="submit">Compare selected (max 3)</button>
+            <button className="btn btn-secondary" type="submit">Compare selected (max 3)</button>
           </form>
           <div className="mt-4">
             <ScenarioComparison currency={business.currency} scenarios={comparisonScenarios} />
@@ -144,7 +144,7 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
             {scenarioRows.map((scenario) => {
               const locked = scenario.kind === 'custom' && !limits.customScenarios;
               return (
-                <article className="rounded-lg border border-slate-200 bg-white p-6" key={scenario.id}>
+                <article className="card" key={scenario.id}>
                   <h3 className="text-xl font-bold text-slate-950">{scenario.name}</h3>
                   <p className="mt-1 text-sm text-slate-700">{scenario.kind === 'custom' ? 'Custom scenario' : 'Preset scenario (editable)'}</p>
                   {locked ? (
@@ -161,7 +161,7 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
                   {scenario.kind === 'custom' && !locked ? (
                     <ActionForm action={removeScenario} className="mt-3">
                       <input name="scenarioId" type="hidden" value={scenario.id} />
-                      <button className="min-h-10 rounded-md border border-red-300 px-3 font-semibold text-red-800 hover:bg-red-50 disabled:opacity-60" type="submit">Delete scenario</button>
+                      <button className="btn btn-danger-outline btn-sm" type="submit">Delete scenario</button>
                     </ActionForm>
                   ) : null}
                 </article>
@@ -173,13 +173,13 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
         <section aria-labelledby="custom-scenario-heading">
           <h2 className="text-2xl font-bold text-slate-950" id="custom-scenario-heading">Create custom scenario</h2>
           {limits.customScenarios ? (
-            <ActionForm className="mt-4 grid gap-4 rounded-lg border border-slate-200 bg-white p-6 md:grid-cols-3" action={createScenario}>
+            <ActionForm className="card grid gap-4 md:grid-cols-3 mt-4" action={createScenario}>
               <label className={`${labelClass} md:col-span-3`}>Scenario name<input className={inputClass} maxLength={100} name="name" required /></label>
               <AssumptionFields currency={business.currency} />
               <div className="md:col-span-3"><button className={primaryButton} type="submit">Create scenario</button></div>
             </ActionForm>
           ) : (
-            <p className="mt-3 rounded-lg border border-dashed border-slate-300 bg-white p-6 text-slate-700">
+            <p className="empty mt-3">
               Custom scenarios need a Founder or Adviser demo plan on the business owner&apos;s account.{' '}
               {isOwner ? <a className="font-semibold text-blue-900 underline" href="/pricing">See demo plans</a> : 'Ask the owner of this business.'}
             </p>

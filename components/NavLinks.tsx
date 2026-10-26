@@ -9,15 +9,15 @@ type NavLinksProps = {
 export default function NavLinks({ items }: NavLinksProps) {
   const pathname = usePathname();
   return (
-    <ul className="flex min-w-max gap-1 text-sm font-semibold">
+    <ul className="flex min-w-max gap-1">
       {items.map((item) => {
         const current = pathname === item.href;
         return (
           <li key={item.href}>
             <a
               aria-current={current ? 'page' : undefined}
-              className={`inline-flex min-h-11 items-center rounded-md px-3 ${
-                current ? 'bg-blue-900 text-white' : 'text-slate-800 hover:bg-slate-100'
+              className={`inline-flex min-h-10 items-center rounded-md px-3.5 text-sm font-semibold transition-colors ${
+                current ? 'bg-blue-50 text-blue-900 ring-1 ring-inset ring-blue-200' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
               }`}
               href={item.href}
             >

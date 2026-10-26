@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 168 36" role="img" aria-label="BootPulse">
+  <title>BootPulse</title>
+  <rect width="36" height="36" rx="9" fill="#ffffff"/>
+  <path d="M7.3 27H13.5V20.8H19.7V14.6H24.8" fill="none" stroke="#1e3a8a" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="25.9" cy="14.6" r="4.95" fill="none" stroke="#2563eb" stroke-opacity="0.55" stroke-width="1.7"/>
+  <circle cx="25.9" cy="14.6" r="2.7" fill="#2563eb"/>
+  <text x="46" y="26" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" letter-spacing="-0.4"><tspan fill="#ffffff">Boot</tspan><tspan fill="#93c5fd">Pulse</tspan></text>
+</svg>

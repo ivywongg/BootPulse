@@ -2,8 +2,8 @@ import { CONSENT_VERSION } from '../lib/auth-validation';
 
 export default function PicsStatement() {
   return (
-    <section className="mt-6 rounded-lg border border-slate-300 bg-slate-50 p-5" aria-labelledby="pics-heading">
-      <h2 className="text-xl font-semibold text-slate-950" id="pics-heading">Personal Information Collection Statement</h2>
+    <section aria-labelledby="pics-heading" className="rounded-lg border border-slate-300 bg-slate-50 p-5">
+      <h2 className="text-base font-bold text-slate-950" id="pics-heading">Personal Information Collection Statement</h2>
       <div className="mt-3 space-y-3 text-sm leading-6 text-slate-700">
         <p>BootPulse collects your email address and password, and the business figures you choose to enter, such as cash balances, revenue, expenses, scenarios, milestones and decisions. Please enter fictional or non-sensitive figures only: this is a university assignment demo.</p>
         <p>Sign-in is handled by Supabase Auth, which stores a hashed password and sends confirmation and recovery emails. Your planning data is stored in a hosted PostgreSQL database. We keep a copy of your email address so that business owners can share a business with an existing account. The time and version of this statement are recorded when you accept it.</p>

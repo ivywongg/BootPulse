@@ -18,7 +18,12 @@ export default async function DashboardPage() {
   const currency = forecast.business.currency;
 
   const money = (cents: number) => formatMoney(cents, currency);
-  const runwayValue = formatRunway(headlineNumbers.runway);
+  // Compact form for the card; the formula text explains "N+ months" means more than N months of runway.
+  const runwayRaw = headlineNumbers.runway;
+  const runwayValue =
+    typeof runwayRaw === 'string' && runwayRaw.startsWith('more than ')
+      ? `${runwayRaw.split(' ')[2]}+ months`
+      : formatRunway(runwayRaw);
   const chartData = rows.map((row) => ({
     month: row.month.slice(0, 7),
     revenue: centsToMajor(row.revenueCents),
@@ -35,13 +40,13 @@ export default async function DashboardPage() {
       </header>
 
       {forecast.business.isDemo ? (
-        <p className="mt-4 rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800">
+        <p className="notice mt-4">
           Fictional demo data: every figure here is invented and fully editable. Replace it with your own numbers on the Revenue, Expenses and Settings pages.
         </p>
       ) : null}
 
       {headlineNumbers.monthlyRevenueCents === 0 && headlineNumbers.monthlyCostsCents === 0 ? (
-        <p className="mt-4 rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800">
+        <p className="notice mt-4">
           No revenue or expenses are active in month 1 yet, so runway is not meaningful. Add items on the{' '}
           <a className="font-semibold text-blue-900 underline" href="/revenue">Revenue</a> and{' '}
           <a className="font-semibold text-blue-900 underline" href="/expenses">Expenses</a> pages.
@@ -52,7 +57,7 @@ export default async function DashboardPage() {
         BootPulse is a planning tool. It does not provide financial, accounting, tax or investment advice.
       </p>
 
-      <section aria-label="Key performance indicators" className="mt-8 grid grid-cols-2 gap-4 xl:grid-cols-5 [&>*:last-child]:col-span-2 xl:[&>*:last-child]:col-span-1">
+      <section aria-label="Key performance indicators" className="mt-8 grid grid-cols-2 items-start gap-4 xl:grid-cols-5 [&>*:last-child]:col-span-2 xl:[&>*:last-child]:col-span-1">
         <KpiCard
           formula="Current cash is the opening cash balance entered for this business."
           label="Current cash"
@@ -74,7 +79,7 @@ export default async function DashboardPage() {
           value={money(headlineNumbers.netBurnCents)}
         />
         <KpiCard
-          formula="Runway is the number of full projected months before the closing balance first falls below zero. A balance of exactly zero still counts as funded."
+          formula="Runway is the number of full projected months before the closing balance first falls below zero. A balance of exactly zero still counts as funded. A result such as 6+ months means cash lasts beyond the forecast length."
           label="Runway"
           value={runwayValue}
         />
@@ -90,7 +95,7 @@ export default async function DashboardPage() {
           <p className="mt-1 text-slate-700">Revenue, costs, and closing balance for the active scenario.</p>
         </div>
         <DesktopOnly>
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="card card-sm">
             <CashFlowChart
               currency={currency}
               data={chartData}

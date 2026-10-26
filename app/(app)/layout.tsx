@@ -1,4 +1,5 @@
 import BusinessSwitcher from '../../components/BusinessSwitcher';
+import Logo from '../../components/Logo';
 import NavLinks from '../../components/NavLinks';
 import { signOut } from '../auth-actions';
 import { getOrCreateUser } from '../../lib/auth';
@@ -31,31 +32,29 @@ export default async function AppLayout({ children }: Readonly<{ children: React
         Skip to main content
       </a>
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-5 px-6 py-5">
-          <a className="text-xl font-bold text-blue-900" href="/dashboard">
-            BootPulse
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3 sm:px-6">
+          <a aria-label="BootPulse dashboard" className="rounded-md" href="/dashboard">
+            <Logo size={32} />
           </a>
-          <div className="flex w-full items-center gap-3 sm:w-auto sm:gap-4">
+          <div className="ml-auto flex items-end gap-3">
             <BusinessSwitcher businessLimit={businessLimit} businesses={userBusinesses} activeBusinessId={activeBusiness.id} ownedCount={ownedCount} />
             <form action={signOut}>
-              <button
-                className="min-h-11 whitespace-nowrap rounded-md border border-slate-300 px-4 font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-800"
-                type="submit"
-              >
-                Sign out
-              </button>
+              <button className="btn btn-secondary" type="submit">Sign out</button>
             </form>
           </div>
+          <nav aria-label="Primary navigation" className="-mx-1 w-full overflow-x-auto px-1 pb-0.5">
+            <NavLinks items={navigation} />
+          </nav>
         </div>
-        <nav aria-label="Primary navigation" className="mx-auto max-w-7xl overflow-x-auto px-6 pb-3">
-          <NavLinks items={navigation} />
-        </nav>
       </header>
 
-      <main className="mx-auto max-w-7xl px-6 py-8 focus:outline-none" id="main" tabIndex={-1}>{children}</main>
+      <main className="mx-auto max-w-7xl px-4 py-8 focus:outline-none sm:px-6 sm:py-10" id="main" tabIndex={-1}>{children}</main>
 
-      <footer className="border-t border-slate-200 bg-white px-6 py-6 text-center text-sm text-slate-700">
-        BootPulse is a planning tool. It does not provide financial, accounting, tax or investment advice.
+      <footer className="border-t border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-6 text-sm text-slate-700 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <Logo size={22} />
+          <p className="max-w-xl">BootPulse is a planning tool. It does not provide financial, accounting, tax or investment advice.</p>
+        </div>
       </footer>
     </div>
   );

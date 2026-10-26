@@ -30,7 +30,7 @@ export default function WarningsPanel({
   upgradeHref = '/pricing',
 }: WarningsPanelProps) {
   return (
-    <section aria-labelledby="warnings-heading" className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <section aria-labelledby="warnings-heading" className="card">
       <h2 className="text-xl font-bold text-slate-950" id="warnings-heading">Warnings</h2>
       {warnings.length === 0 ? (
         <p className="mt-4 text-slate-700">

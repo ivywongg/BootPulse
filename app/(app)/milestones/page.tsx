@@ -84,31 +84,31 @@ export default async function MilestonesPage() {
         <p className="mt-3 text-slate-700">Track important goals and the dates they should be completed.</p>
       </header>
 
-      <ActionForm action={saveMilestone} className="grid gap-4 rounded-lg border border-slate-200 bg-white p-6 md:grid-cols-4">
+      <ActionForm action={saveMilestone} className="card grid gap-4 md:grid-cols-4">
         <h2 className="text-xl font-bold text-slate-950 md:col-span-4">Add milestone</h2>
-        <label className="flex flex-col gap-1 font-semibold text-slate-800 md:col-span-2">Title<input className="min-h-11 rounded-md border border-slate-300 px-3 font-normal" name="title" required /></label>
-        <label className="flex flex-col gap-1 font-semibold text-slate-800">Target date<input className="min-h-11 rounded-md border border-slate-300 px-3 font-normal" name="targetDate" required type="date" /></label>
-        <label className="flex flex-col gap-1 font-semibold text-slate-800">Status<select className="min-h-11 rounded-md border border-slate-300 px-3 font-normal" defaultValue="planned" name="status"><option value="planned">Planned</option><option value="done">Done</option></select></label>
-        <label className="flex flex-col gap-1 font-semibold text-slate-800 md:col-span-4">Optional note<textarea className="rounded-md border border-slate-300 px-3 py-2 font-normal" name="note" rows={2} /></label>
-        <button className="min-h-11 w-fit rounded-md bg-blue-900 px-4 font-semibold text-white hover:bg-blue-800" type="submit">Add milestone</button>
+        <label className="field md:col-span-2">Title<input className="input" name="title" required /></label>
+        <label className="field">Target date<input className="input" name="targetDate" required type="date" /></label>
+        <label className="field">Status<select className="input" defaultValue="planned" name="status"><option value="planned">Planned</option><option value="done">Done</option></select></label>
+        <label className="field md:col-span-4">Optional note<textarea className="input" name="note" rows={2} /></label>
+        <button className="btn btn-primary w-fit" type="submit">Add milestone</button>
       </ActionForm>
 
       <section aria-labelledby="milestone-list-heading">
         <h2 className="text-2xl font-bold text-slate-950" id="milestone-list-heading">Your milestones</h2>
         <div className="mt-4 space-y-5">
-          {milestoneRows.length === 0 ? <p className="rounded-md border border-dashed border-slate-300 p-6 text-slate-700">No milestones yet.</p> : null}
+          {milestoneRows.length === 0 ? <p className="empty">No milestones yet.</p> : null}
           {milestoneRows.map((milestone) => (
-            <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm" key={milestone.id}>
+            <article className="card" key={milestone.id}>
               <ActionForm action={saveMilestone} className="grid gap-4 md:grid-cols-4">
                 <input name="milestoneId" type="hidden" value={milestone.id} />
-                <label className="flex flex-col gap-1 font-semibold text-slate-800 md:col-span-2">Title<input className="min-h-11 rounded-md border border-slate-300 px-3 font-normal" defaultValue={milestone.title} name="title" required /></label>
-                <label className="flex flex-col gap-1 font-semibold text-slate-800">Target date<input className="min-h-11 rounded-md border border-slate-300 px-3 font-normal" defaultValue={milestone.targetDate} name="targetDate" required type="date" /></label>
-                <label className="flex flex-col gap-1 font-semibold text-slate-800">Status<select className="min-h-11 rounded-md border border-slate-300 px-3 font-normal" defaultValue={milestone.status} name="status"><option value="planned">Planned</option><option value="done">Done</option></select></label>
-                <label className="flex flex-col gap-1 font-semibold text-slate-800 md:col-span-4">Add optional note<textarea className="rounded-md border border-slate-300 px-3 py-2 font-normal" name="note" rows={2} /></label>
-                <div className="flex flex-wrap gap-3 md:col-span-4"><button className="min-h-10 rounded-md bg-blue-900 px-4 font-semibold text-white hover:bg-blue-800" type="submit">Save changes</button></div>
+                <label className="field md:col-span-2">Title<input className="input" defaultValue={milestone.title} name="title" required /></label>
+                <label className="field">Target date<input className="input" defaultValue={milestone.targetDate} name="targetDate" required type="date" /></label>
+                <label className="field">Status<select className="input" defaultValue={milestone.status} name="status"><option value="planned">Planned</option><option value="done">Done</option></select></label>
+                <label className="field md:col-span-4">Add optional note<textarea className="input" name="note" rows={2} /></label>
+                <div className="flex flex-wrap gap-3 md:col-span-4"><button className="btn btn-primary btn-sm" type="submit">Save changes</button></div>
               </ActionForm>
               {notesByMilestone.get(milestone.id)?.length ? <div className="mt-5 border-t border-slate-200 pt-4"><h3 className="font-semibold text-slate-900">Notes</h3><ul className="mt-2 space-y-2 text-sm text-slate-700">{notesByMilestone.get(milestone.id)?.map((note) => <li className="rounded-md bg-slate-50 p-3" key={note.id}>{note.body}</li>)}</ul></div> : null}
-              <ActionForm action={deleteMilestone} className="mt-4"><input name="milestoneId" type="hidden" value={milestone.id} /><button className="min-h-10 rounded-md border border-red-300 px-3 font-semibold text-red-800 hover:bg-red-50" type="submit">Delete milestone</button></ActionForm>
+              <ActionForm action={deleteMilestone} className="mt-4"><input name="milestoneId" type="hidden" value={milestone.id} /><button className="btn btn-danger-outline btn-sm" type="submit">Delete milestone</button></ActionForm>
             </article>
           ))}
         </div>

@@ -4,7 +4,6 @@ import './globals.css';
 export const metadata: Metadata = {
   title: { default: 'BootPulse', template: '%s · BootPulse' },
   description: 'Cash-flow and runway planning for founders',
-  icons: { icon: 'data:,' },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

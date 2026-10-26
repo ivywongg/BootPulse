@@ -36,15 +36,15 @@ export default async function CashFlowPage() {
       <section aria-labelledby="cash-flow-formulas">
         <h2 className="text-xl font-bold text-slate-950" id="cash-flow-formulas">Formulas</h2>
         <ul className="mt-3 grid gap-3 text-sm text-slate-700 md:grid-cols-3">
-          <li className="rounded-md bg-white p-4">Net cash flow = revenue − costs</li>
-          <li className="rounded-md bg-white p-4">Closing balance = opening cash + cumulative net cash flow</li>
-          <li className="rounded-md bg-white p-4">Runway = full months before the balance falls below zero</li>
+          <li className="notice">Net cash flow = revenue − costs</li>
+          <li className="notice">Closing balance = opening cash + cumulative net cash flow</li>
+          <li className="notice">Runway = full months before the balance falls below zero</li>
         </ul>
       </section>
 
       <DesktopOnly>
         <div className="space-y-6">
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="card card-sm">
             <CashFlowChart
               currency={currency}
               data={chartData}
@@ -56,28 +56,28 @@ export default async function CashFlowPage() {
             />
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-            <table className="min-w-full border-collapse text-left text-sm">
+          <div className="card overflow-x-auto p-0">
+            <table className="data-table">
               <caption className="sr-only">{forecast.rows.length}-month cash-flow projection</caption>
-              <thead className="bg-slate-100 text-slate-800">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3 font-semibold" scope="col">Month</th>
-                  <th className="px-4 py-3 font-semibold" scope="col">Revenue</th>
-                  <th className="px-4 py-3 font-semibold" scope="col">Costs</th>
-                  <th className="px-4 py-3 font-semibold" scope="col">Net</th>
-                  <th className="px-4 py-3 font-semibold" scope="col">Closing balance</th>
+                  <th scope="col">Month</th>
+                  <th className="num" scope="col">Revenue</th>
+                  <th className="num" scope="col">Costs</th>
+                  <th className="num" scope="col">Net</th>
+                  <th className="num" scope="col">Closing balance</th>
                 </tr>
               </thead>
               <tbody>
                 {forecast.rows.map((row) => (
-                  <tr className="border-t border-slate-200" key={row.month}>
-                    <th className="px-4 py-3 font-medium text-slate-900" scope="row">{row.month}</th>
-                    <td className="px-4 py-3 text-slate-700">{money(row.revenueCents)}</td>
-                    <td className="px-4 py-3 text-slate-700">{money(row.costsCents)}</td>
-                    <td className="px-4 py-3 text-slate-700">{money(row.netCashFlowCents)}</td>
-                    <td className="px-4 py-3 font-semibold text-slate-900">
+                  <tr key={row.month}>
+                    <th className="font-medium text-slate-900" scope="row">{row.month}</th>
+                    <td className="num text-slate-700">{money(row.revenueCents)}</td>
+                    <td className="num text-slate-700">{money(row.costsCents)}</td>
+                    <td className="num text-slate-700">{money(row.netCashFlowCents)}</td>
+                    <td className="num font-semibold text-slate-900">
                       {money(row.closingBalanceCents)}
-                      {row.closingBalanceCents < 0 ? <span className="ml-2 text-red-800">Negative balance</span> : null}
+                      {row.closingBalanceCents < 0 ? <span className="ml-2 text-xs font-bold uppercase text-red-800">Negative</span> : null}
                     </td>
                   </tr>
                 ))}
@@ -88,7 +88,7 @@ export default async function CashFlowPage() {
       </DesktopOnly>
 
       <a
-        className="inline-flex min-h-11 items-center rounded-md border border-slate-300 bg-white px-4 font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-800"
+        className="btn btn-secondary"
         download
         href="/api/export?type=cash-flow"
       >
