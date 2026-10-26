@@ -1,5 +1,6 @@
 import CashFlowChart, { type CashFlowChartDatum, type CashFlowChartLine } from './CashFlowChart';
 import { formatMoney } from '../lib/calc/types';
+import { centsToMajor, formatRunway } from '../lib/format';
 
 export type ScenarioComparisonProjection = {
   month: string;
@@ -35,7 +36,8 @@ export default function ScenarioComparison({
   for (const month of months) {
     const row: CashFlowChartDatum = { month };
     selectedScenarios.forEach((scenario, index) => {
-      row[`scenario_${index}`] = scenario.projection.find((projection) => projection.month === month)?.closingBalanceCents ?? 0;
+      const point = scenario.projection.find((projection) => projection.month === month);
+      row[`scenario_${index}`] = point ? centsToMajor(point.closingBalanceCents) : 0;
     });
     chartData.push(row);
   }
@@ -60,7 +62,7 @@ export default function ScenarioComparison({
                   <div>
                     <dt className="text-sm text-slate-600">Runway</dt>
                     <dd className="text-2xl font-bold text-slate-950">
-                      {typeof scenario.runway === 'number' ? `${scenario.runway.toFixed(1)} months` : scenario.runway}
+                      {formatRunway(scenario.runway)}
                     </dd>
                   </div>
                   <div>
@@ -73,7 +75,7 @@ export default function ScenarioComparison({
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <CashFlowChart data={chartData} lines={chartLines} />
+            <CashFlowChart currency={currency} data={chartData} lines={chartLines} />
           </div>
         </>
       )}

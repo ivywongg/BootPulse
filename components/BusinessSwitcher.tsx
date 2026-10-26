@@ -5,18 +5,21 @@ import { ChangeEvent } from 'react';
 export type SwitcherBusiness = {
   id: string;
   name: string;
+  role?: 'owner' | 'collaborator';
 };
 
 type BusinessSwitcherProps = {
   businesses: readonly SwitcherBusiness[];
   activeBusinessId?: string;
   businessLimit: number;
+  ownedCount: number;
 };
 
 export default function BusinessSwitcher({
   businesses,
   activeBusinessId,
   businessLimit,
+  ownedCount,
 }: BusinessSwitcherProps) {
   if (businesses.length === 0) {
     return null;
@@ -36,7 +39,7 @@ export default function BusinessSwitcher({
       <label className="text-xs font-semibold uppercase tracking-wide text-slate-600" htmlFor="business-switcher">
         Business
       </label>
-      <p className="text-xs text-slate-600">{businesses.length} of {businessLimit} businesses</p>
+      <p className="text-xs text-slate-600">{ownedCount} of {businessLimit} owned businesses</p>
       <select
         className="min-h-11 rounded-md border border-slate-300 bg-white px-3 text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-800"
         id="business-switcher"
@@ -45,7 +48,7 @@ export default function BusinessSwitcher({
       >
         {businesses.map((business) => (
           <option key={business.id} value={business.id}>
-            {business.name}
+            {business.name}{business.role === 'collaborator' ? ' (shared with you)' : ''}
           </option>
         ))}
       </select>

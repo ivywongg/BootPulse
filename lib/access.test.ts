@@ -1,78 +1,45 @@
-import { and, eq } from 'drizzle-orm';
-import { describe, expect, it } from 'vitest';
-import { db } from '../db';
-import { businesses, teamMembers, users } from '../db/schema';
-import { requireBusinessAccess } from './access';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { addMember, createTestDb, makeDemoFor, makeUser } from '../test/db';
+import { getBusinessRole, listUserBusinesses, requireBusinessAccess, requireBusinessOwner } from './access';
 
-describe('business ownership access', () => {
-  it('allows the owner and rejects another user for reads and writes', () => {
-    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const ownerClerkUserId = `access-test-owner-${suffix}`;
-    const otherClerkUserId = `access-test-other-${suffix}`;
+vi.mock('next/headers', () => ({ cookies: async () => ({ get: () => undefined }) }));
 
-    const seeded = db.transaction((tx) => {
-      const owner = tx
-        .insert(users)
-        .values({
-          clerkUserId: ownerClerkUserId,
-          privacyConsentAt: new Date(),
-          consentVersion: 'PICS-v1',
-        })
-        .returning()
-        .get();
-      const otherUser = tx
-        .insert(users)
-        .values({
-          clerkUserId: otherClerkUserId,
-          privacyConsentAt: new Date(),
-          consentVersion: 'PICS-v1',
-        })
-        .returning()
-        .get();
-      const business = tx
-        .insert(businesses)
-        .values({
-          name: `Access test business ${suffix}`,
-          currency: 'USD',
-          cashStartMonth: '2026-01-01',
-          cashBalanceCents: 100_000,
-          isDemo: false,
-        })
-        .returning()
-        .get();
+describe('business access roles', () => {
+  let owner: Awaited<ReturnType<typeof makeUser>>;
+  let collaborator: Awaited<ReturnType<typeof makeUser>>;
+  let stranger: Awaited<ReturnType<typeof makeUser>>;
+  let businessId: string;
 
-      tx.insert(teamMembers)
-        .values({ businessId: business.id, userId: owner.id, role: 'owner' })
-        .run();
+  beforeAll(async () => {
+    await createTestDb();
+    owner = await makeUser('owner@example.test');
+    collaborator = await makeUser('collab@example.test');
+    stranger = await makeUser('stranger@example.test');
+    businessId = (await makeDemoFor(owner.id)).id;
+    await addMember(businessId, collaborator.id, 'collaborator');
+  });
 
-      return { owner, otherUser, business };
-    });
+  it('reports the role of each user', async () => {
+    expect(await getBusinessRole(owner.id, businessId)).toBe('owner');
+    expect(await getBusinessRole(collaborator.id, businessId)).toBe('collaborator');
+    expect(await getBusinessRole(stranger.id, businessId)).toBeNull();
+  });
 
-    try {
-      expect(requireBusinessAccess(seeded.owner.id, seeded.business.id)).toBe(seeded.business.id);
+  it('lets owners and collaborators read and edit but hides the business from strangers', async () => {
+    await expect(requireBusinessAccess(owner.id, businessId)).resolves.toBe(businessId);
+    await expect(requireBusinessAccess(collaborator.id, businessId)).resolves.toBe(businessId);
+    await expect(requireBusinessAccess(stranger.id, businessId)).rejects.toThrow();
+    expect(await listUserBusinesses(stranger.id)).toEqual([]);
+  });
 
-      expect(() => requireBusinessAccess(seeded.otherUser.id, seeded.business.id)).toThrow();
+  it('reserves owner-only actions for the owner', async () => {
+    await expect(requireBusinessOwner(owner.id, businessId)).resolves.toBe(businessId);
+    await expect(requireBusinessOwner(collaborator.id, businessId)).rejects.toThrow('Only the business owner');
+    await expect(requireBusinessOwner(stranger.id, businessId)).rejects.toThrow();
+  });
 
-      expect(() => {
-        requireBusinessAccess(seeded.otherUser.id, seeded.business.id);
-        db.update(businesses).set({ name: 'Unauthorized update' }).where(eq(businesses.id, seeded.business.id)).run();
-      }).toThrow();
-
-      const unchanged = db
-        .select({ name: businesses.name })
-        .from(businesses)
-        .where(eq(businesses.id, seeded.business.id))
-        .get();
-      expect(unchanged?.name).toBe(`Access test business ${suffix}`);
-    } finally {
-      db.delete(teamMembers).where(eq(teamMembers.businessId, seeded.business.id)).run();
-      db.delete(businesses).where(eq(businesses.id, seeded.business.id)).run();
-      db.delete(users)
-        .where(and(eq(users.id, seeded.owner.id), eq(users.clerkUserId, ownerClerkUserId)))
-        .run();
-      db.delete(users)
-        .where(and(eq(users.id, seeded.otherUser.id), eq(users.clerkUserId, otherClerkUserId)))
-        .run();
-    }
+  it('rejects malformed identifiers without querying', async () => {
+    expect(await getBusinessRole('not-a-uuid', businessId)).toBeNull();
+    await expect(requireBusinessAccess(owner.id, "x'; drop table users;--")).rejects.toThrow();
   });
 });

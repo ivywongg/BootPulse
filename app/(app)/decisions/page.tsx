@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { getActiveBusiness, requireBusinessAccess } from '../../../lib/access';
@@ -7,6 +7,8 @@ import { db } from '../../../db';
 import { decisions, notes } from '../../../db/schema';
 import ActionForm from '../../../components/ActionForm';
 import { calendarDateSchema, entityIdSchema, monthFilterSchema } from '../../../lib/validation';
+
+export const metadata = { title: 'Decisions' };
 
 const decisionSchema = z.object({
   title: z.string().trim().min(1).max(160),
@@ -39,13 +41,13 @@ export default async function DecisionsPage({ searchParams }: DecisionsPageProps
   const filters = parsedFilters.data;
   const query = filters.q.toLowerCase();
   const month = filters.month;
-  const allDecisions = db.select().from(decisions).where(eq(decisions.businessId, business.id)).all();
+  const allDecisions = await db.select().from(decisions).where(eq(decisions.businessId, business.id)).orderBy(desc(decisions.decidedOn));
   const decisionRows = allDecisions.filter((decision) => {
     const matchesQuery = !query || [decision.title, decision.expectedImpact, decision.actualOutcome ?? ''].some((value) => value.toLowerCase().includes(query));
     const matchesMonth = !month || decision.decidedOn.startsWith(month);
     return matchesQuery && matchesMonth;
   });
-  const noteRows = db.select().from(notes).where(eq(notes.businessId, business.id)).all();
+  const noteRows = await db.select().from(notes).where(eq(notes.businessId, business.id));
   const notesByDecision = new Map<string, typeof noteRows>();
   for (const note of noteRows) {
     if (!note.decisionId) continue;
@@ -66,24 +68,22 @@ export default async function DecisionsPage({ searchParams }: DecisionsPageProps
     const parsedDecisionId = entityIdSchema.optional().safeParse(formValue(formData, 'decisionId'));
     if (!parsed.success || !parsedDecisionId.success) throw new Error('Check the decision fields and identifier.');
     const currentUser = await getOrCreateUser();
-    requireBusinessAccess(currentUser.id, business.id);
+    await requireBusinessAccess(currentUser.id, business.id);
     const decision = parsed.data;
     const decisionId = parsedDecisionId.data;
-    const saved = decisionId
-      ? db
+    const [saved] = decisionId
+      ? await db
           .update(decisions)
           .set({ title: decision.title, decidedOn: decision.decidedOn, expectedImpact: decision.expectedImpact, actualOutcome: decision.actualOutcome || null })
           .where(and(eq(decisions.id, decisionId), eq(decisions.businessId, business.id)))
           .returning()
-          .get()
-      : db
+      : await db
           .insert(decisions)
           .values({ businessId: business.id, title: decision.title, decidedOn: decision.decidedOn, expectedImpact: decision.expectedImpact, actualOutcome: decision.actualOutcome || null })
-          .returning()
-          .get();
+          .returning();
     if (!saved) redirect('/decisions');
     if (decision.note) {
-      db.insert(notes).values({ businessId: business.id, decisionId: saved.id, body: decision.note }).run();
+      await db.insert(notes).values({ businessId: business.id, decisionId: saved.id, body: decision.note });
     }
     redirect('/decisions');
   }
@@ -93,8 +93,8 @@ export default async function DecisionsPage({ searchParams }: DecisionsPageProps
     const parsedDecisionId = entityIdSchema.safeParse(formValue(formData, 'decisionId'));
     if (!parsedDecisionId.success) throw new Error('Invalid decision identifier.');
     const currentUser = await getOrCreateUser();
-    requireBusinessAccess(currentUser.id, business.id);
-    db.delete(decisions).where(and(eq(decisions.id, parsedDecisionId.data), eq(decisions.businessId, business.id))).run();
+    await requireBusinessAccess(currentUser.id, business.id);
+    await db.delete(decisions).where(and(eq(decisions.id, parsedDecisionId.data), eq(decisions.businessId, business.id)));
     redirect('/decisions');
   }
 

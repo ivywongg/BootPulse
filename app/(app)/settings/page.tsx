@@ -1,116 +1,80 @@
-import { and, eq } from 'drizzle-orm';
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { z } from 'zod';
-import { db } from '../../../db';
-import { businesses, scenarios, subscriptions, teamMembers, users } from '../../../db/schema';
-import { getActiveBusiness, listUserBusinesses, requireBusinessAccess } from '../../../lib/access';
-import { getAuthenticatedUser, getOrCreateUser } from '../../../lib/auth';
-import { getUserPlan, PLAN_LIMITS } from '../../../lib/plans';
-import { entityIdSchema, moneyCentsSchema, monthDateSchema } from '../../../lib/validation';
 import ActionForm from '../../../components/ActionForm';
+import { countOwnedBusinesses, getActiveBusiness, listUserBusinesses } from '../../../lib/access';
+import {
+  addCollaborator,
+  createBusiness,
+  deleteBusiness,
+  listCollaborators,
+  removeCollaborator,
+  renameBusiness,
+  updateCashSettings,
+} from '../../../lib/business-actions';
+import { deleteAccount } from '../../../lib/account-actions';
+import { getOrCreateUser } from '../../../lib/auth';
+import { getBusinessPlan, getUserPlan, PLAN_LIMITS } from '../../../lib/plans';
 
-const businessNameSchema = z.string().trim().min(1).max(120);
+export const metadata = { title: 'Settings' };
 
-function formValue(formData: FormData, name: string) {
-  return String(formData.get(name) ?? '');
-}
+const inputClass = 'min-h-11 rounded-md border border-slate-300 bg-white px-3 font-normal';
+const labelClass = 'flex flex-col gap-1 font-semibold text-slate-800';
+const primaryButton = 'min-h-11 w-fit rounded-md bg-blue-900 px-4 font-semibold text-white hover:bg-blue-800 disabled:opacity-60';
+const card = 'rounded-lg border border-slate-200 bg-white p-6';
 
-async function requireAuthenticatedUser() {
-  const user = await getAuthenticatedUser();
-  if (!user) {
-    redirect('/login');
-  }
-  return user;
-}
+const text = (formData: FormData, name: string) => String(formData.get(name) ?? '');
 
 export default async function SettingsPage() {
   const user = await getOrCreateUser();
   const business = await getActiveBusiness(user.id);
-  const businessCount = listUserBusinesses(user.id).length;
-  const currentPlan = getUserPlan(user.id);
-  const businessLimit = PLAN_LIMITS[currentPlan].businesses;
-  const canCreateBusiness = businessCount < businessLimit;
-  const subscription = db.select().from(subscriptions).where(eq(subscriptions.userId, user.id)).get();
+  const isOwner = business.role === 'owner';
+  const [ownedCount, ownPlan, businessPlan, accessible] = await Promise.all([
+    countOwnedBusinesses(user.id),
+    getUserPlan(user.id),
+    getBusinessPlan(business.id),
+    listUserBusinesses(user.id),
+  ]);
+  const businessLimit = PLAN_LIMITS[ownPlan].businesses;
+  const collaborators = isOwner ? await listCollaborators(business.id) : [];
 
-  async function renameBusiness(formData: FormData) {
+  async function rename(formData: FormData) {
     'use server';
-    const currentUser = await requireAuthenticatedUser();
-    const businessId = entityIdSchema.parse(formValue(formData, 'businessId'));
-    requireBusinessAccess(currentUser.id, businessId);
-    const name = businessNameSchema.parse(formValue(formData, 'name'));
-    db.update(businesses).set({ name }).where(and(eq(businesses.id, businessId))).run();
+    await renameBusiness(business.id, text(formData, 'name'));
     redirect('/settings');
   }
 
-  async function updateCashSettings(formData: FormData) {
+  async function saveCash(formData: FormData) {
     'use server';
-    const currentUser = await requireAuthenticatedUser();
-    const businessId = entityIdSchema.parse(formValue(formData, 'businessId'));
-    requireBusinessAccess(currentUser.id, businessId);
-    const cashStartMonth = monthDateSchema.parse(formValue(formData, 'cashStartMonth'));
-    const cashBalanceCents = moneyCentsSchema.parse(formValue(formData, 'cashBalance'));
-    db.update(businesses).set({ cashBalanceCents, cashStartMonth }).where(eq(businesses.id, businessId)).run();
+    await updateCashSettings(business.id, text(formData, 'cashBalance'), text(formData, 'cashStartMonth'));
     redirect('/settings');
   }
 
-  async function createBusiness(formData: FormData) {
+  async function create(formData: FormData) {
     'use server';
-    const currentUser = await requireAuthenticatedUser();
-    const currentBusinessCount = listUserBusinesses(currentUser.id).length;
-    const currentBusinessLimit = PLAN_LIMITS[getUserPlan(currentUser.id)].businesses;
-    if (currentBusinessCount >= currentBusinessLimit) {
-      redirect('/settings');
-    }
-    const name = businessNameSchema.parse(formValue(formData, 'name'));
-    const cashStartMonth = monthDateSchema.parse(formValue(formData, 'cashStartMonth'));
-    const cashBalanceCents = moneyCentsSchema.parse(formValue(formData, 'cashBalance'));
-    const created = db.insert(businesses).values({ name, currency: 'USD', cashStartMonth, cashBalanceCents, isDemo: false }).returning().get();
-    db.insert(teamMembers).values({ businessId: created.id, userId: currentUser.id, role: 'owner' }).run();
-    db.insert(scenarios).values({ businessId: created.id, name: 'Base', kind: 'base' }).run();
-    const cookieStore = await cookies();
-    cookieStore.set('bp_business', created.id, { httpOnly: false, maxAge: 31536000, path: '/', sameSite: 'lax' });
+    await createBusiness(text(formData, 'name'), text(formData, 'cashBalance'), text(formData, 'cashStartMonth'));
+    redirect('/dashboard');
+  }
+
+  async function invite(formData: FormData) {
+    'use server';
+    await addCollaborator(business.id, text(formData, 'email'));
     redirect('/settings');
   }
 
-  async function deleteAccount(formData: FormData) {
+  async function revoke(formData: FormData) {
     'use server';
-    const confirmation = z.literal('delete').parse(formValue(formData, 'confirmation'));
-    if (confirmation !== 'delete') {
-      throw new Error('Account deletion was not confirmed.');
-    }
+    await removeCollaborator(business.id, text(formData, 'userId'));
+    redirect('/settings');
+  }
 
-    const currentUser = await requireAuthenticatedUser();
-    db.transaction((tx) => {
-      tx
-        .update(subscriptions)
-        .set({
-          plan: 'free',
-          status: 'canceled',
-          stripeCustomerId: null,
-          stripeSubscriptionId: null,
-          currentPeriodEnd: null,
-        })
-        .where(eq(subscriptions.userId, currentUser.id))
-        .run();
+  async function removeBusiness(formData: FormData) {
+    'use server';
+    await deleteBusiness(business.id, text(formData, 'confirmation'));
+    redirect('/dashboard');
+  }
 
-      const ownedBusinesses = tx
-        .select({ businessId: teamMembers.businessId })
-        .from(teamMembers)
-        .where(and(eq(teamMembers.userId, currentUser.id), eq(teamMembers.role, 'owner')))
-        .all();
-
-      for (const ownedBusiness of ownedBusinesses) {
-        tx.delete(businesses).where(eq(businesses.id, ownedBusiness.businessId)).run();
-      }
-
-      tx.delete(users).where(eq(users.id, currentUser.id)).run();
-    });
-
-    const cookieStore = await cookies();
-    cookieStore.delete('bp_session');
-    cookieStore.delete('bp_consent');
-    cookieStore.delete('bp_business');
+  async function removeAccount(formData: FormData) {
+    'use server';
+    await deleteAccount(text(formData, 'confirmation'));
     redirect('/sign-up');
   }
 
@@ -119,59 +83,98 @@ export default async function SettingsPage() {
       <header>
         <p className="text-sm font-semibold uppercase tracking-wide text-blue-900">Account settings</p>
         <h1 className="mt-2 text-3xl font-bold text-slate-950">Settings</h1>
-        <p className="mt-3 text-slate-700">Manage your business details, starting cash, and plan.</p>
+        <p className="mt-3 text-slate-700">
+          Signed in as {user.email}. You are {isOwner ? 'the owner' : 'a collaborator'} of <strong>{business.name}</strong>.
+        </p>
       </header>
 
-      <ActionForm action={renameBusiness} className="grid gap-4 rounded-lg border border-slate-200 bg-white p-6 md:grid-cols-2">
+      <ActionForm action={rename} className={`${card} grid gap-4 md:grid-cols-2`}>
         <h2 className="text-xl font-bold text-slate-950 md:col-span-2">Business profile</h2>
-        <input name="businessId" type="hidden" value={business.id} />
-        <label className="flex flex-col gap-1 font-semibold text-slate-800">Business name<input className="min-h-11 rounded-md border border-slate-300 px-3 font-normal" defaultValue={business.name} name="name" required /></label>
-        <div className="flex items-end"><button className="min-h-11 rounded-md bg-blue-900 px-4 font-semibold text-white hover:bg-blue-800" type="submit">Save business name</button></div>
+        <label className={labelClass}>Business name<input className={inputClass} defaultValue={business.name} maxLength={120} name="name" required /></label>
+        <div className="flex items-end"><button className={primaryButton} type="submit">Save business name</button></div>
       </ActionForm>
 
-      <ActionForm action={updateCashSettings} className="grid gap-4 rounded-lg border border-slate-200 bg-white p-6 md:grid-cols-3">
-        <h2 className="text-xl font-bold text-slate-950 md:col-span-3">Cash settings</h2>
-        <input name="businessId" type="hidden" value={business.id} />
-        <label className="flex flex-col gap-1 font-semibold text-slate-800">Cash balance ({business.currency})<input className="min-h-11 rounded-md border border-slate-300 px-3 font-normal" defaultValue={(business.cashBalanceCents / 100).toFixed(2)} inputMode="decimal" name="cashBalance" required /></label>
-        <label className="flex flex-col gap-1 font-semibold text-slate-800">Cash start month<input className="min-h-11 rounded-md border border-slate-300 px-3 font-normal" defaultValue={business.cashStartMonth} name="cashStartMonth" required type="date" /></label>
-        <div className="flex items-end"><button className="min-h-11 rounded-md bg-blue-900 px-4 font-semibold text-white hover:bg-blue-800" type="submit">Save cash settings</button></div>
+      <ActionForm action={saveCash} className={`${card} grid gap-4 md:grid-cols-3`}>
+        <h2 className="text-xl font-bold text-slate-950 md:col-span-3">Opening cash</h2>
+        <p className="text-sm text-slate-700 md:col-span-3">Month 1 of every forecast is the month containing the start date. Enter the cash you hold at the start of that month.</p>
+        <label className={labelClass}>Cash balance ({business.currency})<input className={inputClass} defaultValue={(business.cashBalanceCents / 100).toFixed(2)} inputMode="decimal" name="cashBalance" required /></label>
+        <label className={labelClass}>Start month<input className={inputClass} defaultValue={business.cashStartMonth} name="cashStartMonth" required type="date" /></label>
+        <div className="flex items-end"><button className={primaryButton} type="submit">Save cash settings</button></div>
       </ActionForm>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-6" aria-labelledby="plan-heading">
-        <h2 className="text-xl font-bold text-slate-950" id="plan-heading">Current plan</h2>
-        <p className="mt-3 text-lg font-semibold capitalize text-slate-900">{subscription?.plan ?? 'free'}</p>
-        <p className="mt-1 text-sm text-slate-700">Status: {subscription?.status ?? 'active'}</p>
+      <section className={card} aria-labelledby="plan-heading">
+        <h2 className="text-xl font-bold text-slate-950" id="plan-heading">Demo plan</h2>
+        <p className="mt-3 text-lg font-semibold capitalize text-slate-900">{ownPlan}</p>
+        <p className="mt-1 text-sm text-slate-700">Assignment demo — no payment is collected. Switching plans never deletes business data.</p>
+        {!isOwner ? <p className="mt-2 text-sm text-slate-700">This business follows its owner&apos;s plan ({businessPlan}), not yours.</p> : null}
+        <a className="mt-3 inline-flex min-h-11 items-center font-semibold text-blue-900 underline" href="/pricing">Change demo plan</a>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-6" aria-labelledby="create-business-heading">
+      {isOwner ? (
+        <section className={card} aria-labelledby="share-heading">
+          <h2 className="text-xl font-bold text-slate-950" id="share-heading">Sharing</h2>
+          <p className="mt-2 text-sm text-slate-700">Collaborators can edit planning data in this business. They cannot change plans, invite people, delete the business or change ownership.</p>
+          <ul className="mt-4 space-y-2">
+            {collaborators.length === 0 ? <li className="text-slate-700">No collaborators yet.</li> : null}
+            {collaborators.map((collaborator) => (
+              <li className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-200 p-3" key={collaborator.userId}>
+                <span>{collaborator.email}</span>
+                <ActionForm action={revoke} className="flex">
+                  <input name="userId" type="hidden" value={collaborator.userId} />
+                  <button className="min-h-10 rounded-md border border-red-300 px-3 font-semibold text-red-800 hover:bg-red-50 disabled:opacity-60" type="submit">Revoke access</button>
+                </ActionForm>
+              </li>
+            ))}
+          </ul>
+          <ActionForm action={invite} className="mt-4 flex flex-wrap items-end gap-4">
+            <label className={labelClass}>Registered account email<input className={inputClass} maxLength={254} name="email" required type="email" /></label>
+            <button className={primaryButton} type="submit">Grant access</button>
+          </ActionForm>
+          <p className="mt-2 text-sm text-slate-700">The person must already have a BootPulse account. No invitation email is sent.</p>
+        </section>
+      ) : null}
+
+      <section className={card} aria-labelledby="create-business-heading">
         <h2 className="text-xl font-bold text-slate-950" id="create-business-heading">Create a business</h2>
-        {canCreateBusiness ? (
-          <ActionForm action={createBusiness} className="mt-4 grid gap-4 md:grid-cols-3">
-            <label className="flex flex-col gap-1 font-semibold text-slate-800">Business name<input className="min-h-11 rounded-md border border-slate-300 px-3 font-normal" name="name" required /></label>
-            <label className="flex flex-col gap-1 font-semibold text-slate-800">Starting cash ({business.currency})<input className="min-h-11 rounded-md border border-slate-300 px-3 font-normal" defaultValue="0.00" inputMode="decimal" name="cashBalance" required /></label>
-            <label className="flex flex-col gap-1 font-semibold text-slate-800">Cash start month<input className="min-h-11 rounded-md border border-slate-300 px-3 font-normal" name="cashStartMonth" required type="date" /></label>
-            <button className="min-h-11 w-fit rounded-md bg-blue-900 px-4 font-semibold text-white hover:bg-blue-800" type="submit">Create business</button>
+        {ownedCount < businessLimit ? (
+          <ActionForm action={create} className="mt-4 grid gap-4 md:grid-cols-3">
+            <label className={labelClass}>Business name<input className={inputClass} maxLength={120} name="name" required /></label>
+            <label className={labelClass}>Starting cash ({business.currency})<input className={inputClass} defaultValue="0.00" inputMode="decimal" name="cashBalance" required /></label>
+            <label className={labelClass}>Start month<input className={inputClass} name="cashStartMonth" required type="date" /></label>
+            <button className={primaryButton} type="submit">Create business</button>
           </ActionForm>
         ) : (
           <p className="mt-3 text-slate-700">
-            You are using {businessCount} of {businessLimit} businesses on the {currentPlan} plan. <a className="font-semibold text-blue-900 underline" href="/pricing">Upgrade your plan</a> to create another business.
+            You own {ownedCount} of {businessLimit} businesses allowed on the {ownPlan} demo plan.{' '}
+            <a className="font-semibold text-blue-900 underline" href="/pricing">See demo plans</a>
           </p>
         )}
       </section>
 
-      <section className="rounded-lg border border-red-200 bg-white p-6" aria-labelledby="delete-account-heading">
-        <h2 className="text-xl font-bold text-red-900" id="delete-account-heading">Delete account and data</h2>
-        <p className="mt-3 text-slate-700">This permanently deletes your account, subscription, businesses, and all planning data. This cannot be undone.</p>
-        <details className="mt-4 rounded-md border border-red-200 p-4">
-          <summary className="cursor-pointer font-semibold text-red-900">Start account deletion</summary>
-          <ActionForm action={deleteAccount} className="mt-4 space-y-4">
+      {isOwner && accessible.length > 1 ? (
+        <section className="rounded-lg border border-red-200 bg-white p-6" aria-labelledby="delete-business-heading">
+          <h2 className="text-xl font-bold text-red-900" id="delete-business-heading">Delete this business</h2>
+          <p className="mt-3 text-slate-700">Permanently deletes {business.name}, its items, scenarios and decisions, and removes access for its collaborators.</p>
+          <ActionForm action={removeBusiness} className="mt-4 space-y-4">
             <label className="flex items-start gap-3 text-slate-800">
               <input className="mt-1 h-5 w-5" name="confirmation" required type="checkbox" value="delete" />
-              <span>I understand that my BootPulse account and data will be permanently deleted.</span>
+              <span>I understand that this business will be permanently deleted.</span>
             </label>
-            <button className="min-h-11 rounded-md bg-red-800 px-4 font-semibold text-white hover:bg-red-700" type="submit">Delete account and data</button>
+            <button className="min-h-11 rounded-md bg-red-800 px-4 font-semibold text-white hover:bg-red-700 disabled:opacity-60" type="submit">Delete business</button>
           </ActionForm>
-        </details>
+        </section>
+      ) : null}
+
+      <section className="rounded-lg border border-red-200 bg-white p-6" aria-labelledby="delete-account-heading">
+        <h2 className="text-xl font-bold text-red-900" id="delete-account-heading">Delete account and data</h2>
+        <p className="mt-3 text-slate-700">Permanently deletes your sign-in account, demo plan and every business you own. Businesses shared with you are not affected. This cannot be undone.</p>
+        <ActionForm action={removeAccount} className="mt-4 space-y-4">
+          <label className="flex items-start gap-3 text-slate-800">
+            <input className="mt-1 h-5 w-5" name="confirmation" required type="checkbox" value="delete" />
+            <span>I understand that my BootPulse account and data will be permanently deleted.</span>
+          </label>
+          <button className="min-h-11 rounded-md bg-red-800 px-4 font-semibold text-white hover:bg-red-700 disabled:opacity-60" type="submit">Delete account and data</button>
+        </ActionForm>
       </section>
     </div>
   );

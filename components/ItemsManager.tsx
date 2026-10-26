@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition, type FormEvent } from 'react';
 import {
   addExpenseItem,
@@ -64,7 +65,9 @@ export default function ItemsManager({
   const [monthFilter, setMonthFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const categoryNames = useMemo(
     () => new Map(categories.map((category) => [category.id, category.name])),
@@ -132,9 +135,10 @@ export default function ItemsManager({
           setError(result.error);
           return;
         }
-        window.location.reload();
+        resetForm();
+        router.refresh();
       } catch (actionError) {
-        setError(actionError instanceof Error ? actionError.message : 'Unable to save this item.');
+        setError('Unable to save this item. Check the values and your access, then try again.');
       }
     });
   }
@@ -145,9 +149,10 @@ export default function ItemsManager({
       try {
         if (kind === 'revenue') await deleteRevenueItem(itemId, businessId);
         else await deleteExpenseItem(itemId, businessId);
-        window.location.reload();
+        setConfirmingDeleteId(null);
+        router.refresh();
       } catch (actionError) {
-        setError(actionError instanceof Error ? actionError.message : 'Unable to delete this item.');
+        setError('Unable to delete this item. Try again.');
       }
     });
   }
@@ -213,7 +218,7 @@ export default function ItemsManager({
       </div>
 
       <ul className="space-y-3" aria-label={`${title} list`}>
-        {visibleItems.length === 0 ? <li className="rounded-md border border-dashed border-slate-300 p-6 text-slate-700">No items match these filters.</li> : null}
+        {visibleItems.length === 0 ? <li className="rounded-md border border-dashed border-slate-300 p-6 text-slate-700">{items.length === 0 ? `No ${kind} items yet. Add your first one above.` : 'No items match these filters.'}</li> : null}
         {visibleItems.map((item) => (
           <li className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white p-4" key={item.id}>
             <div>
@@ -221,8 +226,17 @@ export default function ItemsManager({
               <p className="text-sm text-slate-700">{formatMoney(item.amountCents, currency)} · {item.frequency.replace('_', ' ')} · {item.startMonth}{item.categoryId ? ` · ${categoryNames.get(item.categoryId) ?? 'Category'}` : ''}</p>
             </div>
             <div className="flex gap-2">
-              <button className="min-h-10 rounded-md border border-slate-300 px-3 font-semibold text-slate-900 hover:bg-slate-100" onClick={() => beginEdit(item)} type="button">Edit</button>
-              <button className="min-h-10 rounded-md border border-red-300 px-3 font-semibold text-red-800 hover:bg-red-50" onClick={() => handleDelete(item.id)} type="button">Delete</button>
+              {confirmingDeleteId === item.id ? (
+                <>
+                  <button className="min-h-10 rounded-md bg-red-800 px-3 font-semibold text-white hover:bg-red-700 disabled:opacity-60" disabled={isPending} onClick={() => handleDelete(item.id)} type="button">Confirm delete</button>
+                  <button className="min-h-10 rounded-md border border-slate-300 px-3 font-semibold text-slate-900 hover:bg-slate-100" onClick={() => setConfirmingDeleteId(null)} type="button">Keep</button>
+                </>
+              ) : (
+                <>
+                  <button aria-label={`Edit ${item.name}`} className="min-h-10 rounded-md border border-slate-300 px-3 font-semibold text-slate-900 hover:bg-slate-100" onClick={() => beginEdit(item)} type="button">Edit</button>
+                  <button aria-label={`Delete ${item.name}`} className="min-h-10 rounded-md border border-red-300 px-3 font-semibold text-red-800 hover:bg-red-50" onClick={() => setConfirmingDeleteId(item.id)} type="button">Delete</button>
+                </>
+              )}
             </div>
           </li>
         ))}

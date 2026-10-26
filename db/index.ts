@@ -1,30 +1,35 @@
-import Database from 'better-sqlite3';
-import { chmodSync, mkdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import * as schema from './schema';
 
-const configuredUrl = process.env.DATABASE_URL ?? 'file:./data/bootpulse.db';
-const databasePath = configuredUrl.startsWith('file:')
-  ? configuredUrl.slice('file:'.length)
-  : configuredUrl;
-const resolvedDatabasePath = resolve(databasePath);
+export type Db = PostgresJsDatabase<typeof schema>;
 
-mkdirSync(dirname(resolvedDatabasePath), { recursive: true });
+let instance: Db | undefined;
 
-const sqlite = new Database(resolvedDatabasePath);
-sqlite.pragma('foreign_keys = ON');
-chmodSync(resolvedDatabasePath, 0o600);
-// Additive local-auth migration: no existing business or user rows are rewritten.
-sqlite.exec(`
-  CREATE TABLE IF NOT EXISTS local_credentials (
-    user_id TEXT PRIMARY KEY NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    email TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL
-  );
-  CREATE TABLE IF NOT EXISTS local_sessions (
-    token_hash TEXT PRIMARY KEY NOT NULL,
-    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    expires_at INTEGER NOT NULL
-  );
-`);
-export const db = drizzle(sqlite);
+function connect(): Db {
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error('DATABASE_URL is not set. Use the Supabase pooled connection string (server-only).');
+  }
+  // Supabase's transaction pooler does not support prepared statements; keep the pool tiny per serverless instance.
+  return drizzle(postgres(url, { prepare: false, max: 1 }), { schema });
+}
+
+export function getDb(): Db {
+  instance ??= connect();
+  return instance;
+}
+
+/** Test hook: swap in an in-memory Postgres-compatible database. */
+export function setDbForTests(testDb: unknown) {
+  instance = testDb as Db;
+}
+
+// Connects on first query so builds and imports never need credentials.
+export const db: Db = new Proxy({} as Db, {
+  get(_target, property) {
+    const target = getDb();
+    const value = Reflect.get(target, property);
+    return typeof value === 'function' ? value.bind(target) : value;
+  },
+});

@@ -9,7 +9,7 @@ import { getRunway } from './calc/runway';
 import { getWarnings } from './calc/warnings';
 import type { CashFlowItem, MonthRow, RunwayResult, ScenarioAssumptions } from './calc/types';
 import type { Warning, WarningType } from './calc/warnings';
-import { getUserPlan, PLAN_LIMITS } from './plans';
+import { getBusinessPlan, PLAN_LIMITS } from './plans';
 
 export interface ForecastResult {
   business: typeof businesses.$inferSelect;
@@ -33,34 +33,35 @@ export async function loadForecast(
   scenarioId?: string,
 ): Promise<ForecastResult> {
   const user = await getOrCreateUser();
-  requireBusinessAccess(user.id, businessId);
-  const planLimits = PLAN_LIMITS[getUserPlan(user.id)];
+  await requireBusinessAccess(user.id, businessId);
+  const planLimits = PLAN_LIMITS[await getBusinessPlan(businessId)];
 
-  const business = db.select().from(businesses).where(eq(businesses.id, businessId)).get();
+  const [business] = await db.select().from(businesses).where(eq(businesses.id, businessId)).limit(1);
   if (!business) {
     notFound();
   }
 
-  const scenario = scenarioId
-    ? db
-        .select()
-        .from(scenarios)
-        .where(and(eq(scenarios.id, scenarioId), eq(scenarios.businessId, businessId)))
-        .get()
-    : db
-        .select()
-        .from(scenarios)
-        .where(and(eq(scenarios.businessId, businessId), eq(scenarios.kind, 'base')))
-        .get();
+  const [scenario] = await db
+    .select()
+    .from(scenarios)
+    .where(
+      scenarioId
+        ? and(eq(scenarios.id, scenarioId), eq(scenarios.businessId, businessId))
+        : and(eq(scenarios.businessId, businessId), eq(scenarios.kind, 'base')),
+    )
+    .limit(1);
 
   if (!scenario) {
     notFound();
   }
+  if (scenario.kind === 'custom' && !planLimits.customScenarios) {
+    throw new Error('Custom scenarios need a Founder or Adviser plan.');
+  }
 
-  const [revenueRows, expenseRows] = [
-    db.select().from(revenueItems).where(eq(revenueItems.businessId, businessId)).all(),
-    db.select().from(expenseItems).where(eq(expenseItems.businessId, businessId)).all(),
-  ];
+  const [revenueRows, expenseRows] = await Promise.all([
+    db.select().from(revenueItems).where(eq(revenueItems.businessId, businessId)),
+    db.select().from(expenseItems).where(eq(expenseItems.businessId, businessId)),
+  ]);
 
   const items = {
     revenue: revenueRows as CashFlowItem[],

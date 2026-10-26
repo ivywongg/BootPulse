@@ -1,5 +1,11 @@
 import type { ScenarioAssumptions } from './types';
 
+/** Whole cents, halves rounded away from zero; toPrecision drops float noise such as 99000.00000000001. */
+export function roundCents(value: number): number {
+  const clean = Number(value.toPrecision(12));
+  return Math.sign(clean) * Math.round(Math.abs(clean));
+}
+
 export interface ScenarioTotals {
   revenue: number;
   costs: number;
@@ -32,7 +38,7 @@ export function applyAssumptions(
     (1 - assumptions.revenueLossPct / 100) *
     Math.pow(1 + assumptions.revenueGrowthPct / 100, m - 1);
 
-  const revenue = Math.round(baseRevenue * revenueFactor);
+  const revenue = roundCents(baseRevenue * revenueFactor);
   const costs =
     baseCosts +
     assumptions.extraRecurringCostCents +

@@ -1,6 +1,7 @@
-import { redirect } from 'next/navigation';
 import BusinessSwitcher from '../../components/BusinessSwitcher';
-import { clearAuthentication, getOrCreateUser } from '../../lib/auth';
+import NavLinks from '../../components/NavLinks';
+import { signOut } from '../auth-actions';
+import { getOrCreateUser } from '../../lib/auth';
 import { getActiveBusiness, listUserBusinesses } from '../../lib/access';
 import { getUserPlan, PLAN_LIMITS } from '../../lib/plans';
 
@@ -13,20 +14,16 @@ const navigation = [
   { href: '/milestones', label: 'Milestones' },
   { href: '/decisions', label: 'Decisions' },
   { href: '/settings', label: 'Settings' },
+  { href: '/pricing', label: 'Demo plans' },
 ];
-
-async function signOut() {
-  'use server';
-
-  await clearAuthentication();
-  redirect('/login');
-}
 
 export default async function AppLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const user = await getOrCreateUser();
-  const userBusinesses = listUserBusinesses(user.id);
+  const userBusinesses = await listUserBusinesses(user.id);
   const activeBusiness = await getActiveBusiness(user.id);
-  const businessLimit = PLAN_LIMITS[getUserPlan(user.id)].businesses;
+  const plan = await getUserPlan(user.id);
+  const businessLimit = PLAN_LIMITS[plan].businesses;
+  const ownedCount = userBusinesses.filter((business) => business.role === 'owner').length;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
@@ -36,10 +33,10 @@ export default async function AppLayout({ children }: Readonly<{ children: React
             BootPulse
           </a>
           <div className="flex items-center gap-4">
-            <BusinessSwitcher businessLimit={businessLimit} businesses={userBusinesses} activeBusinessId={activeBusiness.id} />
+            <BusinessSwitcher businessLimit={businessLimit} businesses={userBusinesses} activeBusinessId={activeBusiness.id} ownedCount={ownedCount} />
             <form action={signOut}>
               <button
-                className="min-h-11 rounded-md border border-slate-300 px-4 font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-800"
+                className="min-h-11 whitespace-nowrap rounded-md border border-slate-300 px-4 font-semibold text-slate-900 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-800"
                 type="submit"
               >
                 Sign out
@@ -47,16 +44,8 @@ export default async function AppLayout({ children }: Readonly<{ children: React
             </form>
           </div>
         </div>
-        <nav aria-label="Primary navigation" className="mx-auto max-w-7xl overflow-x-auto px-6 pb-4">
-          <ul className="flex min-w-max gap-5 text-sm font-semibold text-slate-700">
-            {navigation.map((item) => (
-              <li key={item.href}>
-                <a className="underline-offset-4 hover:underline" href={item.href}>
-                  {item.label}
-                </a>
-              </li>
-            ))}
-          </ul>
+        <nav aria-label="Primary navigation" className="mx-auto max-w-7xl overflow-x-auto px-6 pb-3">
+          <NavLinks items={navigation} />
         </nav>
       </header>
 

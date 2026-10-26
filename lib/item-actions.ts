@@ -12,6 +12,7 @@ import { entityIdSchema, moneyTextSchema, monthDateSchema } from './validation';
 export type ItemKind = 'revenue' | 'expense';
 
 const itemKindSchema = z.enum(['revenue', 'expense']);
+const itemTables = { revenue: revenueItems, expense: expenseItems } as const;
 
 const itemInputSchema = z.object({
   businessId: entityIdSchema,
@@ -24,28 +25,34 @@ const itemInputSchema = z.object({
 
 export type ItemInput = z.input<typeof itemInputSchema>;
 
-type ValidatedItemInput = Omit<z.output<typeof itemInputSchema>, 'categoryId' | 'amount'> & {
-  categoryId: string | null;
-  amountCents: number;
-};
-
 type ValidationError = { error: string };
 
 function validationError(error: z.ZodError): ValidationError {
-  return {
-    error: error.issues
-      .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
-      .join(' '),
-  };
+  return { error: error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join(' ') };
 }
 
-function validateItemInput(input: unknown): ValidatedItemInput | ValidationError {
-  const result = itemInputSchema.safeParse(input);
-  if (!result.success) {
-    return validationError(result.error);
-  }
+async function requireUser() {
+  const user = await getAuthenticatedUser();
+  if (!user) throw new Error('Authentication required.');
+  return user;
+}
 
+/** Validates the form values and checks the caller may edit this business (owner or collaborator). */
+async function prepareValues(input: unknown) {
+  const result = itemInputSchema.safeParse(input);
+  if (!result.success) return validationError(result.error);
   const parsed = result.data;
+  const user = await requireUser();
+  await requireBusinessAccess(user.id, parsed.businessId);
+
+  if (parsed.categoryId) {
+    const [category] = await db
+      .select({ id: categories.id })
+      .from(categories)
+      .where(and(eq(categories.id, parsed.categoryId), eq(categories.businessId, parsed.businessId)))
+      .limit(1);
+    if (!category) throw new Error('Category does not belong to this business.');
+  }
 
   return {
     businessId: parsed.businessId,
@@ -57,138 +64,43 @@ function validateItemInput(input: unknown): ValidatedItemInput | ValidationError
   };
 }
 
-async function assertItemAccess(input: ValidatedItemInput) {
-  const user = await getAuthenticatedUser();
-  if (!user) {
-    throw new Error('Authentication required.');
-  }
-
-  requireBusinessAccess(user.id, input.businessId);
-
-  if (input.categoryId) {
-    const category = db
-      .select({ id: categories.id })
-      .from(categories)
-      .where(
-        and(eq(categories.id, input.categoryId), eq(categories.businessId, input.businessId)),
-      )
-      .get();
-    if (!category) {
-      throw new Error('Category does not belong to this business.');
-    }
-  }
-}
-
 export async function addItem(kind: ItemKind, input: ItemInput) {
   const parsedKind = itemKindSchema.safeParse(kind);
   if (!parsedKind.success) return validationError(parsedKind.error);
-
-  const validated = validateItemInput(input);
-  if ('error' in validated) return validated;
-  await assertItemAccess(validated);
-
-  if (parsedKind.data === 'revenue') {
-    return db.insert(revenueItems).values(validated).returning().get();
-  }
-
-  return db.insert(expenseItems).values(validated).returning().get();
+  const values = await prepareValues(input);
+  if ('error' in values) return values;
+  const [created] = await db.insert(itemTables[parsedKind.data]).values(values).returning();
+  return created;
 }
 
 export async function updateItem(kind: ItemKind, itemId: string, input: ItemInput) {
-  const parsedAction = z
-    .object({ kind: itemKindSchema, itemId: entityIdSchema })
-    .safeParse({ kind, itemId });
-  if (!parsedAction.success) return validationError(parsedAction.error);
-
-  const validated = validateItemInput(input);
-  if ('error' in validated) return validated;
-  await assertItemAccess(validated);
-
-  if (parsedAction.data.kind === 'revenue') {
-    const existing = db
-      .select({ id: revenueItems.id })
-      .from(revenueItems)
-      .where(
-        and(
-          eq(revenueItems.id, parsedAction.data.itemId),
-          eq(revenueItems.businessId, validated.businessId),
-        ),
-      )
-      .get();
-    if (!existing) throw new Error('Revenue item not found.');
-    return db
-      .update(revenueItems)
-      .set(validated)
-      .where(
-        and(
-          eq(revenueItems.id, parsedAction.data.itemId),
-          eq(revenueItems.businessId, validated.businessId),
-        ),
-      )
-      .returning()
-      .get();
-  }
-
-  const existing = db
-    .select({ id: expenseItems.id })
-    .from(expenseItems)
-    .where(
-      and(
-        eq(expenseItems.id, parsedAction.data.itemId),
-        eq(expenseItems.businessId, validated.businessId),
-      ),
-    )
-    .get();
-  if (!existing) throw new Error('Expense item not found.');
-  return db
-    .update(expenseItems)
-    .set(validated)
-    .where(
-      and(
-        eq(expenseItems.id, parsedAction.data.itemId),
-        eq(expenseItems.businessId, validated.businessId),
-      ),
-    )
-    .returning()
-    .get();
+  const parsed = z.object({ kind: itemKindSchema, itemId: entityIdSchema }).safeParse({ kind, itemId });
+  if (!parsed.success) return validationError(parsed.error);
+  const values = await prepareValues(input);
+  if ('error' in values) return values;
+  const table = itemTables[parsed.data.kind];
+  const [updated] = await db
+    .update(table)
+    .set(values)
+    .where(and(eq(table.id, parsed.data.itemId), eq(table.businessId, values.businessId)))
+    .returning();
+  if (!updated) throw new Error('Item not found.');
+  return updated;
 }
 
 export async function deleteItem(kind: ItemKind, itemId: string, businessId: string) {
-  const parsedAction = z
+  const parsed = z
     .object({ kind: itemKindSchema, itemId: entityIdSchema, businessId: entityIdSchema })
     .safeParse({ kind, itemId, businessId });
-  if (!parsedAction.success) return validationError(parsedAction.error);
-
-  const user = await getAuthenticatedUser();
-  if (!user) {
-    throw new Error('Authentication required.');
-  }
-
-  requireBusinessAccess(user.id, parsedAction.data.businessId);
-
-  if (parsedAction.data.kind === 'revenue') {
-    return db
-      .delete(revenueItems)
-      .where(
-        and(
-          eq(revenueItems.id, parsedAction.data.itemId),
-          eq(revenueItems.businessId, parsedAction.data.businessId),
-        ),
-      )
-      .returning()
-      .get();
-  }
-
-  return db
-    .delete(expenseItems)
-    .where(
-      and(
-        eq(expenseItems.id, parsedAction.data.itemId),
-        eq(expenseItems.businessId, parsedAction.data.businessId),
-      ),
-    )
-    .returning()
-    .get();
+  if (!parsed.success) return validationError(parsed.error);
+  const user = await requireUser();
+  await requireBusinessAccess(user.id, parsed.data.businessId);
+  const table = itemTables[parsed.data.kind];
+  const [deleted] = await db
+    .delete(table)
+    .where(and(eq(table.id, parsed.data.itemId), eq(table.businessId, parsed.data.businessId)))
+    .returning();
+  return deleted;
 }
 
 export async function addRevenueItem(input: ItemInput) {

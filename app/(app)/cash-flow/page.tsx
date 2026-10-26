@@ -2,8 +2,11 @@ import { getActiveBusiness } from '../../../lib/access';
 import CashFlowChart from '../../../components/CashFlowChart';
 import DesktopOnly from '../../../components/DesktopOnly';
 import { formatMoney } from '../../../lib/calc/types';
+import { centsToMajor } from '../../../lib/format';
 import { getOrCreateUser } from '../../../lib/auth';
 import { loadForecast } from '../../../lib/forecast';
+
+export const metadata = { title: 'Cash flow' };
 
 export default async function CashFlowPage() {
   const user = await getOrCreateUser();
@@ -13,9 +16,9 @@ export default async function CashFlowPage() {
   const money = (cents: number) => formatMoney(cents, currency);
   const chartData = forecast.rows.map((row) => ({
     month: row.month.slice(0, 7),
-    revenue: row.revenueCents,
-    costs: row.costsCents,
-    closingBalance: row.closingBalanceCents,
+    revenue: centsToMajor(row.revenueCents),
+    costs: centsToMajor(row.costsCents),
+    closingBalance: centsToMajor(row.closingBalanceCents),
   }));
 
   return (
@@ -43,6 +46,7 @@ export default async function CashFlowPage() {
         <div className="space-y-6">
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <CashFlowChart
+              currency={currency}
               data={chartData}
               lines={[
                 { dataKey: 'revenue', label: 'Revenue' },

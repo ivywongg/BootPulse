@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { CONSENT_VERSION } from './auth-constants';
+
+export const CONSENT_VERSION = 'PICS-v2';
 
 export const emailSchema = z.string().trim().toLowerCase().email().max(254);
 export const passwordSchema = z.string().min(8).max(128);
@@ -9,4 +10,4 @@ export const signupSchema = loginSchema.extend({
   consentVersion: z.literal(CONSENT_VERSION),
 }).strict();
 
-export type AuthFormState = { error: string | null };
+export type AuthFormState = { error: string | null; message?: string | null };

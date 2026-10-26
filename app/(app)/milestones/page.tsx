@@ -8,6 +8,8 @@ import { milestones, notes } from '../../../db/schema';
 import ActionForm from '../../../components/ActionForm';
 import { calendarDateSchema, entityIdSchema } from '../../../lib/validation';
 
+export const metadata = { title: 'Milestones' };
+
 const milestoneSchema = z.object({
   milestoneId: z.string().trim().transform((value) => value || undefined).pipe(entityIdSchema.optional()),
   title: z.string().trim().min(1).max(160),
@@ -23,8 +25,10 @@ function formValue(formData: FormData, name: string) {
 export default async function MilestonesPage() {
   const user = await getOrCreateUser();
   const business = await getActiveBusiness(user.id);
-  const milestoneRows = db.select().from(milestones).where(eq(milestones.businessId, business.id)).all();
-  const noteRows = db.select().from(notes).where(eq(notes.businessId, business.id)).all();
+  const [milestoneRows, noteRows] = await Promise.all([
+    db.select().from(milestones).where(eq(milestones.businessId, business.id)).orderBy(milestones.targetDate),
+    db.select().from(notes).where(eq(notes.businessId, business.id)),
+  ]);
   const notesByMilestone = new Map<string, typeof noteRows>();
   for (const note of noteRows) {
     if (!note.milestoneId) continue;
@@ -37,7 +41,7 @@ export default async function MilestonesPage() {
     'use server';
     const currentUser = await getAuthenticatedUser();
     if (!currentUser) redirect('/login');
-    const businessId = requireBusinessAccess(currentUser.id, business.id);
+    const businessId = await requireBusinessAccess(currentUser.id, business.id);
     const parsed = milestoneSchema.parse({
       milestoneId: formValue(formData, 'milestoneId'),
       title: formValue(formData, 'title'),
@@ -45,21 +49,19 @@ export default async function MilestonesPage() {
       status: formValue(formData, 'status'),
       note: formValue(formData, 'note'),
     });
-    const saved = parsed.milestoneId
-      ? db
+    const [saved] = parsed.milestoneId
+      ? await db
           .update(milestones)
           .set({ title: parsed.title, targetDate: parsed.targetDate, status: parsed.status })
           .where(and(eq(milestones.id, parsed.milestoneId), eq(milestones.businessId, businessId)))
           .returning()
-          .get()
-      : db
+      : await db
           .insert(milestones)
           .values({ businessId, title: parsed.title, targetDate: parsed.targetDate, status: parsed.status })
-          .returning()
-          .get();
+          .returning();
     if (!saved) throw new Error('Milestone not found.');
     if (parsed.note) {
-      db.insert(notes).values({ businessId, milestoneId: saved.id, body: parsed.note }).run();
+      await db.insert(notes).values({ businessId, milestoneId: saved.id, body: parsed.note });
     }
     redirect('/milestones');
   }
@@ -68,9 +70,9 @@ export default async function MilestonesPage() {
     'use server';
     const currentUser = await getAuthenticatedUser();
     if (!currentUser) redirect('/login');
-    const businessId = requireBusinessAccess(currentUser.id, business.id);
+    const businessId = await requireBusinessAccess(currentUser.id, business.id);
     const milestoneId = entityIdSchema.parse(formValue(formData, 'milestoneId'));
-    db.delete(milestones).where(and(eq(milestones.id, milestoneId), eq(milestones.businessId, businessId))).run();
+    await db.delete(milestones).where(and(eq(milestones.id, milestoneId), eq(milestones.businessId, businessId)));
     redirect('/milestones');
   }
 

@@ -14,14 +14,17 @@ export const calendarDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use Y
 export const monthDateSchema = calendarDateSchema.transform((value) => `${value.slice(0, 7)}-01`);
 export const monthFilterSchema = z.string().regex(/^\d{4}-(?:0[1-9]|1[0-2])$/, 'Use YYYY-MM.');
 
+// Amounts are stored in 32-bit integer cents.
+export const MAX_MONEY_CENTS = 2_000_000_000;
+
 export const moneyTextSchema = z.string().trim().min(1).max(64).refine((value) => {
   try {
     const cents = parseMoneyToCents(value);
-    return Number.isSafeInteger(cents) && cents >= 0;
+    return Number.isSafeInteger(cents) && cents >= 0 && cents <= MAX_MONEY_CENTS;
   } catch {
     return false;
   }
-}, 'Use a non-negative money value with no more than two decimal places.');
+}, 'Use a money value from 0 to 20,000,000 with at most two decimal places.');
 
 export const moneyCentsSchema = z.preprocess(
   (value) => typeof value === 'number' && Number.isFinite(value) ? String(value) : value,

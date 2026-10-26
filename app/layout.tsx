@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'BootPulse',
+  title: { default: 'BootPulse', template: '%s · BootPulse' },
   description: 'Cash-flow and runway planning for founders',
   icons: { icon: 'data:,' },
 };

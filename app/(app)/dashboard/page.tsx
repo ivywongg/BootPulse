@@ -1,11 +1,14 @@
 import { getActiveBusiness } from '../../../lib/access';
 import { formatMoney } from '../../../lib/calc/types';
+import { centsToMajor, formatRunway } from '../../../lib/format';
 import CashFlowChart from '../../../components/CashFlowChart';
 import DesktopOnly from '../../../components/DesktopOnly';
 import KpiCard from '../../../components/KpiCard';
 import WarningsPanel from '../../../components/WarningsPanel';
 import { getOrCreateUser } from '../../../lib/auth';
 import { loadForecast } from '../../../lib/forecast';
+
+export const metadata = { title: 'Dashboard' };
 
 export default async function DashboardPage() {
   const user = await getOrCreateUser();
@@ -15,15 +18,12 @@ export default async function DashboardPage() {
   const currency = forecast.business.currency;
 
   const money = (cents: number) => formatMoney(cents, currency);
-  const runwayValue =
-    typeof headlineNumbers.runway === 'number'
-      ? `${headlineNumbers.runway.toFixed(1)} months`
-      : headlineNumbers.runway;
+  const runwayValue = formatRunway(headlineNumbers.runway);
   const chartData = rows.map((row) => ({
     month: row.month.slice(0, 7),
-    revenue: row.revenueCents,
-    costs: row.costsCents,
-    closingBalance: row.closingBalanceCents,
+    revenue: centsToMajor(row.revenueCents),
+    costs: centsToMajor(row.costsCents),
+    closingBalance: centsToMajor(row.closingBalanceCents),
   }));
 
   return (
@@ -34,11 +34,25 @@ export default async function DashboardPage() {
         <p className="mt-3 text-slate-700">Your current cash-flow and runway overview.</p>
       </header>
 
+      {forecast.business.isDemo ? (
+        <p className="mt-4 rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800">
+          Fictional demo data: every figure here is invented and fully editable. Replace it with your own numbers on the Revenue, Expenses and Settings pages.
+        </p>
+      ) : null}
+
+      {headlineNumbers.monthlyRevenueCents === 0 && headlineNumbers.monthlyCostsCents === 0 ? (
+        <p className="mt-4 rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800">
+          No revenue or expenses are active in month 1 yet, so runway is not meaningful. Add items on the{' '}
+          <a className="font-semibold text-blue-900 underline" href="/revenue">Revenue</a> and{' '}
+          <a className="font-semibold text-blue-900 underline" href="/expenses">Expenses</a> pages.
+        </p>
+      ) : null}
+
       <p className="mt-4 text-sm text-slate-700">
         BootPulse is a planning tool. It does not provide financial, accounting, tax or investment advice.
       </p>
 
-      <section aria-label="Key performance indicators" className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <section aria-label="Key performance indicators" className="mt-8 grid grid-cols-2 gap-4 xl:grid-cols-5 [&>*:last-child]:col-span-2 xl:[&>*:last-child]:col-span-1">
         <KpiCard
           formula="Current cash is the opening cash balance entered for this business."
           label="Current cash"
@@ -60,7 +74,7 @@ export default async function DashboardPage() {
           value={money(headlineNumbers.netBurnCents)}
         />
         <KpiCard
-          formula="Runway is the number of full projected months before the cash balance first falls below zero."
+          formula="Runway is the number of full projected months before the closing balance first falls below zero. A balance of exactly zero still counts as funded."
           label="Runway"
           value={runwayValue}
         />
@@ -78,6 +92,7 @@ export default async function DashboardPage() {
         <DesktopOnly>
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <CashFlowChart
+              currency={currency}
               data={chartData}
               lines={[
                 { dataKey: 'revenue', label: 'Revenue' },

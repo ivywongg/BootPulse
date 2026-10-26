@@ -24,6 +24,7 @@ type CashFlowChartProps = {
   data: readonly CashFlowChartDatum[];
   lines: readonly CashFlowChartLine[];
   height?: number;
+  currency?: string;
 };
 
 const lineStyles = [
@@ -32,11 +33,14 @@ const lineStyles = [
   { stroke: '#15803d', strokeDasharray: '2 4' },
 ];
 
-function formatValue(value: number | string) {
-  return typeof value === 'number' ? value.toLocaleString('en-US') : value;
+function formatValue(value: number | string, currency: string) {
+  return typeof value === 'number'
+    ? value.toLocaleString('en-US', { style: 'currency', currency, maximumFractionDigits: 0 })
+    : value;
 }
 
-export default function CashFlowChart({ data, lines, height = 320 }: CashFlowChartProps) {
+// Chart values are in whole currency units (cents / 100); the table beside every chart has exact amounts.
+export default function CashFlowChart({ data, lines, height = 320, currency = 'USD' }: CashFlowChartProps) {
   return (
     <div className="w-full">
       <div aria-label="Cash flow chart. Monthly values are provided in the accompanying table." role="img">
@@ -49,12 +53,12 @@ export default function CashFlowChart({ data, lines, height = 320 }: CashFlowCha
             tick={{ fill: '#334155', fontSize: 12 }}
           />
           <YAxis
-            label={{ value: 'Amount (cents)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
+            label={{ value: `Amount (${currency})`, angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
             tick={{ fill: '#334155', fontSize: 12 }}
-            tickFormatter={(value: number) => value.toLocaleString('en-US')}
+            tickFormatter={(value: number) => formatValue(value, currency)}
             width={100}
           />
-          <Tooltip formatter={(value) => formatValue(value as number | string)} />
+          <Tooltip formatter={(value) => formatValue(value as number | string, currency)} />
           <Legend height={36} verticalAlign="top" />
           {lines.map((line, index) => {
             const style = lineStyles[index % lineStyles.length];
@@ -75,7 +79,7 @@ export default function CashFlowChart({ data, lines, height = 320 }: CashFlowCha
       </ResponsiveContainer>
       </div>
       <table className="sr-only">
-        <caption>Cash-flow chart monthly values (amounts in cents)</caption>
+        <caption>Cash-flow chart monthly values ({currency})</caption>
         <thead>
           <tr>
             <th scope="col">Month</th>
@@ -86,7 +90,7 @@ export default function CashFlowChart({ data, lines, height = 320 }: CashFlowCha
           {data.map((row) => (
             <tr key={String(row.month)}>
               <th scope="row">{row.month}</th>
-              {lines.map((line) => <td key={line.dataKey}>{formatValue(row[line.dataKey])}</td>)}
+              {lines.map((line) => <td key={line.dataKey}>{formatValue(row[line.dataKey], currency)}</td>)}
             </tr>
           ))}
         </tbody>

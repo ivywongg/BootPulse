@@ -6,17 +6,18 @@ import { getOrCreateUser } from '../../../lib/auth';
 import { db } from '../../../db';
 import { categories, revenueItems } from '../../../db/schema';
 
+export const metadata = { title: 'Revenue' };
+
 export default async function RevenuePage() {
   const user = await getOrCreateUser();
   const business = await getActiveBusiness(user.id);
-  const [items, categoryRows] = [
-    db.select().from(revenueItems).where(eq(revenueItems.businessId, business.id)).all(),
+  const [items, categoryRows] = await Promise.all([
+    db.select().from(revenueItems).where(eq(revenueItems.businessId, business.id)),
     db
       .select({ id: categories.id, name: categories.name })
       .from(categories)
-      .where(and(eq(categories.businessId, business.id), eq(categories.kind, 'revenue')))
-      .all(),
-  ];
+      .where(and(eq(categories.businessId, business.id), eq(categories.kind, 'revenue'))),
+  ]);
 
   return (
     <DesktopOnly>

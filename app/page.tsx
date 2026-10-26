@@ -13,7 +13,7 @@ export default function HomePage() {
     {
       name: 'Adviser',
       price: '$49/mo',
-      summary: 'Coming soon for advisers managing up to ten businesses.',
+      summary: 'Up to ten businesses for advisers, with the full forecast and warning set.',
     },
   ];
 
@@ -59,7 +59,7 @@ export default function HomePage() {
       <section className="mx-auto max-w-7xl px-6 pb-20" aria-labelledby="plans-heading">
         <div className="mb-7">
           <h2 className="text-2xl font-bold text-slate-950" id="plans-heading">Choose the right starting point</h2>
-          <p className="mt-2 text-slate-700">All plans keep your cash flow and runway in one structured workspace.</p>
+          <p className="mt-2 text-slate-700">Fictional prices for an assignment demo. Plans only change limits; no payment is collected.</p>
         </div>
         <div className="grid gap-5 md:grid-cols-3">
           {plans.map((plan) => (

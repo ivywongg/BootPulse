@@ -13,9 +13,9 @@ export default function KpiCard({ label, value, formula }: KpiCardProps) {
   const formulaId = useId();
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
       <p className="text-sm font-semibold uppercase tracking-wide text-slate-600">{label}</p>
-      <p className="mt-3 text-3xl font-bold text-slate-950">{value}</p>
+      <p className="mt-3 text-2xl font-bold text-slate-950 sm:text-3xl">{value}</p>
       <button
         aria-controls={formulaId}
         aria-expanded={showFormula}

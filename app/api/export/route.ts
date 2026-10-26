@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { db } from '../../../db';
-import { expenseItems, revenueItems } from '../../../db/schema';
+import { categories, expenseItems, revenueItems } from '../../../db/schema';
 import { getActiveBusiness, requireBusinessAccess } from '../../../lib/access';
 import { getAuthenticatedUser } from '../../../lib/auth';
 import { loadForecast } from '../../../lib/forecast';
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   const requestedBusinessId = query.businessId ?? activeBusiness.id;
   const { type } = query;
 
-  requireBusinessAccess(user.id, requestedBusinessId);
+  await requireBusinessAccess(user.id, requestedBusinessId);
 
   if (type === 'cash-flow') {
     const forecast = await loadForecast(requestedBusinessId);
@@ -88,27 +88,28 @@ export async function GET(request: NextRequest): Promise<Response> {
 
   if (type === 'revenue' || type === 'expenses') {
     const table = type === 'revenue' ? revenueItems : expenseItems;
-    const items = db
+    const items = await db
       .select({
         name: table.name,
         amountCents: table.amountCents,
         frequency: table.frequency,
         startMonth: table.startMonth,
-        categoryId: table.categoryId,
+        category: categories.name,
       })
       .from(table)
+      .leftJoin(categories, eq(categories.id, table.categoryId))
       .where(eq(table.businessId, requestedBusinessId))
-      .all();
+      .orderBy(table.startMonth, table.name);
 
     return csvResponse(
       `bootpulse-${type}.csv`,
-      ['name', 'amount_cents', 'frequency', 'start_month', 'category_id'],
+      ['name', 'amount_cents', 'frequency', 'start_month', 'category'],
       items.map((item) => [
         item.name,
         item.amountCents,
         item.frequency,
         item.startMonth,
-        item.categoryId,
+        item.category,
       ]),
     );
   }
