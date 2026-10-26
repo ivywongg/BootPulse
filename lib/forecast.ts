@@ -33,35 +33,31 @@ export async function loadForecast(
   scenarioId?: string,
 ): Promise<ForecastResult> {
   const user = await getOrCreateUser();
-  await requireBusinessAccess(user.id, businessId);
-  const planLimits = PLAN_LIMITS[await getBusinessPlan(businessId)];
-
-  const [business] = await db.select().from(businesses).where(eq(businesses.id, businessId)).limit(1);
-  if (!business) {
-    notFound();
-  }
-
-  const [scenario] = await db
-    .select()
-    .from(scenarios)
-    .where(
-      scenarioId
-        ? and(eq(scenarios.id, scenarioId), eq(scenarios.businessId, businessId))
-        : and(eq(scenarios.businessId, businessId), eq(scenarios.kind, 'base')),
-    )
-    .limit(1);
-
-  if (!scenario) {
+  // Independent reads run together (each database round trip is slow on a hosted pooler).
+  // Nothing is returned unless the access check passes.
+  const [, plan, [business], [scenario], revenueRows, expenseRows] = await Promise.all([
+    requireBusinessAccess(user.id, businessId),
+    getBusinessPlan(businessId),
+    db.select().from(businesses).where(eq(businesses.id, businessId)).limit(1),
+    db
+      .select()
+      .from(scenarios)
+      .where(
+        scenarioId
+          ? and(eq(scenarios.id, scenarioId), eq(scenarios.businessId, businessId))
+          : and(eq(scenarios.businessId, businessId), eq(scenarios.kind, 'base')),
+      )
+      .limit(1),
+    db.select().from(revenueItems).where(eq(revenueItems.businessId, businessId)),
+    db.select().from(expenseItems).where(eq(expenseItems.businessId, businessId)),
+  ]);
+  const planLimits = PLAN_LIMITS[plan];
+  if (!business || !scenario) {
     notFound();
   }
   if (scenario.kind === 'custom' && !planLimits.customScenarios) {
     throw new Error('Custom scenarios need a Founder or Adviser plan.');
   }
-
-  const [revenueRows, expenseRows] = await Promise.all([
-    db.select().from(revenueItems).where(eq(revenueItems.businessId, businessId)),
-    db.select().from(expenseItems).where(eq(expenseItems.businessId, businessId)),
-  ]);
 
   const items = {
     revenue: revenueRows as CashFlowItem[],

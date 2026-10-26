@@ -12,7 +12,7 @@ function connect(): Db {
     throw new Error('DATABASE_URL is not set. Use the Supabase pooled connection string (server-only).');
   }
   // Supabase's transaction pooler does not support prepared statements; keep the pool tiny per serverless instance.
-  return drizzle(postgres(url, { prepare: false, max: 1 }), { schema });
+  return drizzle(postgres(url, { prepare: false, max: 3 }), { schema });
 }
 
 export function getDb(): Db {

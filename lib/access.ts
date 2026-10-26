@@ -1,5 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { db } from '../db';
 import { businesses, teamMembers } from '../db/schema';
@@ -35,7 +36,8 @@ export async function requireBusinessOwner(userId: string, businessId: string): 
   return businessId;
 }
 
-export async function listUserBusinesses(userId: string) {
+// Memoised per request: the layout and the page both need it.
+export const listUserBusinesses = cache(async (userId: string) => {
   const parsedUser = entityIdSchema.safeParse(userId);
   if (!parsedUser.success) return [];
   const rows = await db
@@ -45,7 +47,7 @@ export async function listUserBusinesses(userId: string) {
     .where(eq(teamMembers.userId, parsedUser.data))
     .orderBy(businesses.createdAt);
   return rows.map(({ business, role }) => ({ ...business, role }));
-}
+});
 
 export async function countOwnedBusinesses(userId: string) {
   return (await listUserBusinesses(userId)).filter((business) => business.role === 'owner').length;

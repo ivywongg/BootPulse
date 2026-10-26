@@ -184,7 +184,7 @@ Implemented once in `lib/calc/*` (pure TypeScript, unit tested). Every figure in
 | Auth | Supabase Auth via `@supabase/ssr` | Email and password, email confirmation, recovery email. Server code trusts only `auth.getUser()`. |
 | Payments | None | Assignment-only demo plans (§6). |
 | Charts | Recharts | Line charts. |
-| Hosting | Vercel | Deployed from GitHub; no filesystem persistence is used. |
+| Hosting | Vercel | Deployed from GitHub; no filesystem persistence is used. Functions run in the database's region (Tokyo, `hnd1`) to keep per-query latency low. |
 | Tests | Vitest with PGlite | In-memory Postgres runs the real migrations; no native modules. |
 
 Substitutions from the original plan (Neon, Clerk, Stripe) and from the interim SQLite/local-auth build are recorded in `tasklist.md`.
