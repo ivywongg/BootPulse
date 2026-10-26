@@ -90,6 +90,21 @@ export async function updatePassword(_state: AuthFormState, formData: FormData):
   redirect('/dashboard');
 }
 
+/** For a signed-in account with no consent record: store consent (time and version) in the account metadata. */
+export async function acceptConsent(_state: AuthFormState, formData: FormData): Promise<AuthFormState> {
+  if (formData.get('consent') !== 'accepted' || formData.get('consentVersion') !== CONSENT_VERSION) {
+    return { error: 'Tick the box to accept the current statement.' };
+  }
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect('/login');
+  const { error } = await supabase.auth.updateUser({
+    data: { consent_version: CONSENT_VERSION, consent_at: new Date().toISOString() },
+  });
+  if (error) return { error: 'Unable to record your consent. Try again.' };
+  redirect('/dashboard');
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();

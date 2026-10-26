@@ -4,7 +4,7 @@ import { supabaseConfig } from './env';
 
 const PUBLIC_PATHS = new Set(['/', '/login', '/sign-up', '/forgot-password', '/pricing']);
 
-function isPublic(pathname: string) {
+export function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.has(pathname) || pathname.startsWith('/auth/');
 }
 
@@ -25,7 +25,7 @@ export async function updateSession(request: NextRequest) {
 
   // getClaims validates the JWT signature; pages and actions re-check with getUser().
   const { data } = await supabase.auth.getClaims();
-  if (data?.claims || isPublic(request.nextUrl.pathname)) return response;
+  if (data?.claims || isPublicPath(request.nextUrl.pathname)) return response;
 
   if (request.nextUrl.pathname.startsWith('/api/')) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 });

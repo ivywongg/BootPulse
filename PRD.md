@@ -111,6 +111,7 @@
 | `/login` | Sign in | Public |
 | `/sign-up` | PICS, consent, sign-up | Public |
 | `/forgot-password` | Request recovery email | Public |
+| `/consent` | Accept the PICS for a signed-in account with no recorded consent | Signed in |
 | `/reset-password` | Choose a new password (needs the recovery session) | Recovery session |
 | `/auth/confirm` | Handles email links (`token_hash` or `code`) | Public (route handler) |
 | `/pricing` | Fictional plans, demo-plan switch | Public to view; signed in to switch |
@@ -240,7 +241,7 @@ Rules: only `NEXT_PUBLIC_` values may reach the browser; `.env.example` holds pl
 
 ### Supabase Auth
 
-- Email confirmation is required before first sign-in. Sign-up passes the consent version and time as sign-up metadata; the app copies them into `users` on first verified request, rejecting missing, stale-version or future-dated consent.
+- Email confirmation is required before first sign-in. Sign-up passes the consent version and time as sign-up metadata; the app copies them into `users` on first verified request, rejecting missing, stale-version or future-dated consent; a signed-in account without a valid record is sent to `/consent` to accept the statement.
 - Email links go to `/auth/confirm` (`token_hash`+`type`, or PKCE `code`) and then to a validated same-site path. Recovery lands on `/reset-password`.
 - Responses never reveal whether an email has an account (sign-up and recovery use generic messages). Sharing a business necessarily confirms whether an email has an account; this is accepted for the demo.
 - Recovery links are never displayed or logged by the app. Email delivery uses Supabase's mailer; custom SMTP and a verified sending domain are required for arbitrary recipients (Phase 4 checklist).
