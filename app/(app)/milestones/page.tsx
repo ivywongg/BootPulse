@@ -1,0 +1,116 @@
+import { and, eq } from 'drizzle-orm';
+import { redirect } from 'next/navigation';
+import { z } from 'zod';
+import { getActiveBusiness, requireBusinessAccess } from '../../../lib/access';
+import { getAuthenticatedUser, getOrCreateUser } from '../../../lib/auth';
+import { db } from '../../../db';
+import { milestones, notes } from '../../../db/schema';
+import ActionForm from '../../../components/ActionForm';
+import { calendarDateSchema, entityIdSchema } from '../../../lib/validation';
+
+const milestoneSchema = z.object({
+  milestoneId: z.string().trim().transform((value) => value || undefined).pipe(entityIdSchema.optional()),
+  title: z.string().trim().min(1).max(160),
+  targetDate: calendarDateSchema,
+  status: z.enum(['planned', 'done']),
+  note: z.string().trim().max(500),
+});
+
+function formValue(formData: FormData, name: string) {
+  return String(formData.get(name) ?? '');
+}
+
+export default async function MilestonesPage() {
+  const user = await getOrCreateUser();
+  const business = await getActiveBusiness(user.id);
+  const milestoneRows = db.select().from(milestones).where(eq(milestones.businessId, business.id)).all();
+  const noteRows = db.select().from(notes).where(eq(notes.businessId, business.id)).all();
+  const notesByMilestone = new Map<string, typeof noteRows>();
+  for (const note of noteRows) {
+    if (!note.milestoneId) continue;
+    const current = notesByMilestone.get(note.milestoneId) ?? [];
+    current.push(note);
+    notesByMilestone.set(note.milestoneId, current);
+  }
+
+  async function saveMilestone(formData: FormData) {
+    'use server';
+    const currentUser = await getAuthenticatedUser();
+    if (!currentUser) redirect('/login');
+    const businessId = requireBusinessAccess(currentUser.id, business.id);
+    const parsed = milestoneSchema.parse({
+      milestoneId: formValue(formData, 'milestoneId'),
+      title: formValue(formData, 'title'),
+      targetDate: formValue(formData, 'targetDate'),
+      status: formValue(formData, 'status'),
+      note: formValue(formData, 'note'),
+    });
+    const saved = parsed.milestoneId
+      ? db
+          .update(milestones)
+          .set({ title: parsed.title, targetDate: parsed.targetDate, status: parsed.status })
+          .where(and(eq(milestones.id, parsed.milestoneId), eq(milestones.businessId, businessId)))
+          .returning()
+          .get()
+      : db
+          .insert(milestones)
+          .values({ businessId, title: parsed.title, targetDate: parsed.targetDate, status: parsed.status })
+          .returning()
+          .get();
+    if (!saved) throw new Error('Milestone not found.');
+    if (parsed.note) {
+      db.insert(notes).values({ businessId, milestoneId: saved.id, body: parsed.note }).run();
+    }
+    redirect('/milestones');
+  }
+
+  async function deleteMilestone(formData: FormData) {
+    'use server';
+    const currentUser = await getAuthenticatedUser();
+    if (!currentUser) redirect('/login');
+    const businessId = requireBusinessAccess(currentUser.id, business.id);
+    const milestoneId = entityIdSchema.parse(formValue(formData, 'milestoneId'));
+    db.delete(milestones).where(and(eq(milestones.id, milestoneId), eq(milestones.businessId, businessId))).run();
+    redirect('/milestones');
+  }
+
+  return (
+    <div className="space-y-8">
+      <header>
+        <p className="text-sm font-semibold uppercase tracking-wide text-blue-900">{business.name}</p>
+        <h1 className="mt-2 text-3xl font-bold text-slate-950">Milestones</h1>
+        <p className="mt-3 text-slate-700">Track important goals and the dates they should be completed.</p>
+      </header>
+
+      <ActionForm action={saveMilestone} className="grid gap-4 rounded-lg border border-slate-200 bg-white p-6 md:grid-cols-4">
+        <h2 className="text-xl font-bold text-slate-950 md:col-span-4">Add milestone</h2>
+        <label className="flex flex-col gap-1 font-semibold text-slate-800 md:col-span-2">Title<input className="min-h-11 rounded-md border border-slate-300 px-3 font-normal" name="title" required /></label>
+        <label className="flex flex-col gap-1 font-semibold text-slate-800">Target date<input className="min-h-11 rounded-md border border-slate-300 px-3 font-normal" name="targetDate" required type="date" /></label>
+        <label className="flex flex-col gap-1 font-semibold text-slate-800">Status<select className="min-h-11 rounded-md border border-slate-300 px-3 font-normal" defaultValue="planned" name="status"><option value="planned">Planned</option><option value="done">Done</option></select></label>
+        <label className="flex flex-col gap-1 font-semibold text-slate-800 md:col-span-4">Optional note<textarea className="rounded-md border border-slate-300 px-3 py-2 font-normal" name="note" rows={2} /></label>
+        <button className="min-h-11 w-fit rounded-md bg-blue-900 px-4 font-semibold text-white hover:bg-blue-800" type="submit">Add milestone</button>
+      </ActionForm>
+
+      <section aria-labelledby="milestone-list-heading">
+        <h2 className="text-2xl font-bold text-slate-950" id="milestone-list-heading">Your milestones</h2>
+        <div className="mt-4 space-y-5">
+          {milestoneRows.length === 0 ? <p className="rounded-md border border-dashed border-slate-300 p-6 text-slate-700">No milestones yet.</p> : null}
+          {milestoneRows.map((milestone) => (
+            <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm" key={milestone.id}>
+              <ActionForm action={saveMilestone} className="grid gap-4 md:grid-cols-4">
+                <input name="milestoneId" type="hidden" value={milestone.id} />
+                <label className="flex flex-col gap-1 font-semibold text-slate-800 md:col-span-2">Title<input className="min-h-11 rounded-md border border-slate-300 px-3 font-normal" defaultValue={milestone.title} name="title" required /></label>
+                <label className="flex flex-col gap-1 font-semibold text-slate-800">Target date<input className="min-h-11 rounded-md border border-slate-300 px-3 font-normal" defaultValue={milestone.targetDate} name="targetDate" required type="date" /></label>
+                <label className="flex flex-col gap-1 font-semibold text-slate-800">Status<select className="min-h-11 rounded-md border border-slate-300 px-3 font-normal" defaultValue={milestone.status} name="status"><option value="planned">Planned</option><option value="done">Done</option></select></label>
+                <label className="flex flex-col gap-1 font-semibold text-slate-800 md:col-span-4">Add optional note<textarea className="rounded-md border border-slate-300 px-3 py-2 font-normal" name="note" rows={2} /></label>
+                <div className="flex flex-wrap gap-3 md:col-span-4"><button className="min-h-10 rounded-md bg-blue-900 px-4 font-semibold text-white hover:bg-blue-800" type="submit">Save changes</button></div>
+              </ActionForm>
+              {notesByMilestone.get(milestone.id)?.length ? <div className="mt-5 border-t border-slate-200 pt-4"><h3 className="font-semibold text-slate-900">Notes</h3><ul className="mt-2 space-y-2 text-sm text-slate-700">{notesByMilestone.get(milestone.id)?.map((note) => <li className="rounded-md bg-slate-50 p-3" key={note.id}>{note.body}</li>)}</ul></div> : null}
+              <ActionForm action={deleteMilestone} className="mt-4"><input name="milestoneId" type="hidden" value={milestone.id} /><button className="min-h-10 rounded-md border border-red-300 px-3 font-semibold text-red-800 hover:bg-red-50" type="submit">Delete milestone</button></ActionForm>
+            </article>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}

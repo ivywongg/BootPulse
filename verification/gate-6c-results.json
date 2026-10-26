@@ -1,0 +1,454 @@
+{
+  "baseURL": "http://127.0.0.1:3100",
+  "viewport": "1440x1000",
+  "results": [
+    {
+      "responsive": [
+        {
+          "width": 1440,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/landing-1440.png"
+        },
+        {
+          "width": 1024,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/landing-1024.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/landing-390.png"
+        }
+      ],
+      "route": "/",
+      "httpStatus": 200,
+      "controlCount": 4,
+      "keyboardVisited": 4,
+      "targetFailures": [],
+      "missingLabels": [],
+      "focusFailures": [],
+      "unreachable": [],
+      "axe": {
+        "violations": [],
+        "manualReview": []
+      },
+      "hoverFailures": [],
+      "interactions": [],
+      "chartTables": 0,
+      "pass": true
+    },
+    {
+      "responsive": [
+        {
+          "width": 1440,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/dashboard-1440.png"
+        },
+        {
+          "width": 1024,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/dashboard-1024.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/dashboard-390.png"
+        }
+      ],
+      "route": "/dashboard",
+      "httpStatus": 200,
+      "controlCount": 16,
+      "keyboardVisited": 16,
+      "targetFailures": [],
+      "missingLabels": [],
+      "focusFailures": [],
+      "unreachable": [],
+      "axe": {
+        "violations": [],
+        "manualReview": [
+          {
+            "id": "color-contrast",
+            "count": 16
+          }
+        ]
+      },
+      "hoverFailures": [],
+      "interactions": [
+        "KPI formula toggle opened using Enter"
+      ],
+      "chartTables": 1,
+      "pass": true
+    },
+    {
+      "responsive": [
+        {
+          "width": 1440,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/revenue-1440.png"
+        },
+        {
+          "width": 1024,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/revenue-1024.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/revenue-390.png"
+        }
+      ],
+      "route": "/revenue",
+      "httpStatus": 200,
+      "controlCount": 24,
+      "keyboardVisited": 24,
+      "targetFailures": [],
+      "missingLabels": [],
+      "focusFailures": [],
+      "unreachable": [],
+      "axe": {
+        "violations": [],
+        "manualReview": []
+      },
+      "hoverFailures": [],
+      "interactions": [],
+      "chartTables": 0,
+      "pass": true
+    },
+    {
+      "responsive": [
+        {
+          "width": 1440,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/expenses-1440.png"
+        },
+        {
+          "width": 1024,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/expenses-1024.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/expenses-390.png"
+        }
+      ],
+      "route": "/expenses",
+      "httpStatus": 200,
+      "controlCount": 24,
+      "keyboardVisited": 24,
+      "targetFailures": [],
+      "missingLabels": [],
+      "focusFailures": [],
+      "unreachable": [],
+      "axe": {
+        "violations": [],
+        "manualReview": []
+      },
+      "hoverFailures": [],
+      "interactions": [],
+      "chartTables": 0,
+      "pass": true
+    },
+    {
+      "responsive": [
+        {
+          "width": 1440,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/cash-flow-1440.png"
+        },
+        {
+          "width": 1024,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/cash-flow-1024.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/cash-flow-390.png"
+        }
+      ],
+      "route": "/cash-flow",
+      "httpStatus": 200,
+      "controlCount": 12,
+      "keyboardVisited": 12,
+      "targetFailures": [],
+      "missingLabels": [],
+      "focusFailures": [],
+      "unreachable": [],
+      "axe": {
+        "violations": [],
+        "manualReview": [
+          {
+            "id": "color-contrast",
+            "count": 16
+          }
+        ]
+      },
+      "hoverFailures": [],
+      "interactions": [],
+      "chartTables": 2,
+      "pass": true
+    },
+    {
+      "responsive": [
+        {
+          "width": 1440,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/scenarios-1440.png"
+        },
+        {
+          "width": 1024,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/scenarios-1024.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/scenarios-390.png"
+        }
+      ],
+      "route": "/scenarios",
+      "httpStatus": 200,
+      "controlCount": 40,
+      "keyboardVisited": 40,
+      "targetFailures": [],
+      "missingLabels": [],
+      "focusFailures": [],
+      "unreachable": [],
+      "axe": {
+        "violations": [],
+        "manualReview": [
+          {
+            "id": "color-contrast",
+            "count": 16
+          }
+        ]
+      },
+      "hoverFailures": [],
+      "interactions": [
+        "Invalid server submission produces visible text alert and preserves entered value"
+      ],
+      "chartTables": 1,
+      "pass": true
+    },
+    {
+      "responsive": [
+        {
+          "width": 1440,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/milestones-1440.png"
+        },
+        {
+          "width": 1024,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/milestones-1024.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/milestones-390.png"
+        }
+      ],
+      "route": "/milestones",
+      "httpStatus": 200,
+      "controlCount": 22,
+      "keyboardVisited": 22,
+      "targetFailures": [],
+      "missingLabels": [],
+      "focusFailures": [],
+      "unreachable": [],
+      "axe": {
+        "violations": [],
+        "manualReview": []
+      },
+      "hoverFailures": [],
+      "interactions": [
+        "Invalid server submission produces visible text alert and preserves entered value"
+      ],
+      "chartTables": 0,
+      "pass": true
+    },
+    {
+      "responsive": [
+        {
+          "width": 1440,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/decisions-1440.png"
+        },
+        {
+          "width": 1024,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/decisions-1024.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/decisions-390.png"
+        }
+      ],
+      "route": "/decisions",
+      "httpStatus": 200,
+      "controlCount": 27,
+      "keyboardVisited": 27,
+      "targetFailures": [],
+      "missingLabels": [],
+      "focusFailures": [],
+      "unreachable": [],
+      "axe": {
+        "violations": [],
+        "manualReview": []
+      },
+      "hoverFailures": [],
+      "interactions": [
+        "Invalid server submission produces visible text alert and preserves entered value"
+      ],
+      "chartTables": 0,
+      "pass": true
+    },
+    {
+      "responsive": [
+        {
+          "width": 1440,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/settings-1440.png"
+        },
+        {
+          "width": 1024,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/settings-1024.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/settings-390.png"
+        }
+      ],
+      "route": "/settings",
+      "httpStatus": 200,
+      "controlCount": 20,
+      "keyboardVisited": 20,
+      "targetFailures": [],
+      "missingLabels": [],
+      "focusFailures": [],
+      "unreachable": [],
+      "axe": {
+        "violations": [],
+        "manualReview": []
+      },
+      "hoverFailures": [],
+      "interactions": [
+        "Deletion disclosure opened with Enter; no deletion submitted",
+        "Invalid server submission produces visible text alert and preserves entered value"
+      ],
+      "chartTables": 0,
+      "pass": true
+    },
+    {
+      "responsive": [
+        {
+          "width": 1440,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/pricing-1440.png"
+        },
+        {
+          "width": 1024,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/pricing-1024.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/pricing-390.png"
+        }
+      ],
+      "route": "/pricing",
+      "httpStatus": 200,
+      "controlCount": 2,
+      "keyboardVisited": 2,
+      "targetFailures": [],
+      "missingLabels": [],
+      "focusFailures": [],
+      "unreachable": [],
+      "axe": {
+        "violations": [],
+        "manualReview": []
+      },
+      "hoverFailures": [],
+      "interactions": [],
+      "chartTables": 0,
+      "pass": true
+    },
+    {
+      "responsive": [
+        {
+          "width": 1440,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/login-1440.png"
+        },
+        {
+          "width": 1024,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/login-1024.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/login-390.png"
+        }
+      ],
+      "route": "/login",
+      "httpStatus": 200,
+      "controlCount": 5,
+      "keyboardVisited": 5,
+      "targetFailures": [],
+      "missingLabels": [],
+      "focusFailures": [],
+      "unreachable": [],
+      "axe": {
+        "violations": [],
+        "manualReview": []
+      },
+      "hoverFailures": [],
+      "interactions": [],
+      "chartTables": 0,
+      "pass": true
+    },
+    {
+      "responsive": [
+        {
+          "width": 1440,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/sign-up-1440.png"
+        },
+        {
+          "width": 1024,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/sign-up-1024.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "screenshot": "/tmp/bootpulse-gate-6c/sign-up-390.png"
+        }
+      ],
+      "route": "/sign-up",
+      "httpStatus": 200,
+      "controlCount": 6,
+      "keyboardVisited": 6,
+      "targetFailures": [],
+      "missingLabels": [],
+      "focusFailures": [],
+      "unreachable": [],
+      "axe": {
+        "violations": [],
+        "manualReview": []
+      },
+      "hoverFailures": [],
+      "interactions": [
+        "Consent checkbox enabled account form using Space"
+      ],
+      "chartTables": 0,
+      "pass": true
+    }
+  ]
+}
