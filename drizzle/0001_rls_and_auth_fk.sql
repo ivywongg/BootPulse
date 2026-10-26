@@ -18,6 +18,9 @@ BEGIN
   IF to_regnamespace('auth') IS NOT NULL THEN
     ALTER TABLE "users" ADD CONSTRAINT "users_id_auth_users_fk"
       FOREIGN KEY ("id") REFERENCES auth.users("id") ON DELETE CASCADE;
-    REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
+    -- Only BootPulse's own tables; other tables in the project keep their existing grants.
+    REVOKE ALL ON TABLE "users", "businesses", "team_members", "subscriptions", "categories",
+      "revenue_items", "expense_items", "scenarios", "milestones", "decisions", "notes"
+      FROM anon, authenticated;
   END IF;
 END $$;

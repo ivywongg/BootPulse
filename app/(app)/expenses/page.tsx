@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import DesktopOnly from '../../../components/DesktopOnly';
 import ItemsManager from '../../../components/ItemsManager';
 import { getActiveBusiness } from '../../../lib/access';
@@ -12,7 +12,7 @@ export default async function ExpensesPage() {
   const user = await getOrCreateUser();
   const business = await getActiveBusiness(user.id);
   const [items, categoryRows] = await Promise.all([
-    db.select().from(expenseItems).where(eq(expenseItems.businessId, business.id)),
+    db.select().from(expenseItems).where(eq(expenseItems.businessId, business.id)).orderBy(asc(expenseItems.startMonth), asc(expenseItems.name)),
     db
       .select({ id: categories.id, name: categories.name })
       .from(categories)

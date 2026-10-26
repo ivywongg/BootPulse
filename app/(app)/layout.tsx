@@ -27,12 +27,15 @@ export default async function AppLayout({ children }: Readonly<{ children: React
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
+      <a className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-10 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:font-semibold focus:text-blue-900" href="#main">
+        Skip to main content
+      </a>
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-5 px-6 py-5">
           <a className="text-xl font-bold text-blue-900" href="/dashboard">
             BootPulse
           </a>
-          <div className="flex items-center gap-4">
+          <div className="flex w-full items-center gap-3 sm:w-auto sm:gap-4">
             <BusinessSwitcher businessLimit={businessLimit} businesses={userBusinesses} activeBusinessId={activeBusiness.id} ownedCount={ownedCount} />
             <form action={signOut}>
               <button
@@ -49,7 +52,7 @@ export default async function AppLayout({ children }: Readonly<{ children: React
         </nav>
       </header>
 
-      <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
+      <main className="mx-auto max-w-7xl px-6 py-8 focus:outline-none" id="main" tabIndex={-1}>{children}</main>
 
       <footer className="border-t border-slate-200 bg-white px-6 py-6 text-center text-sm text-slate-700">
         BootPulse is a planning tool. It does not provide financial, accounting, tax or investment advice.

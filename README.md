@@ -50,7 +50,7 @@ Sign up, then open the confirmation email in Mailpit. `supabase/config.toml` and
 
 ## Deploy checklist (hosted Supabase + Vercel)
 
-1. **Migrations.** Set `DIRECT_URL` locally to the hosted project's direct or session-pooler string and run `npm run db:migrate`. This creates the tables, enables row-level security with no policies, and revokes Data API access.
+1. **Migrations.** First run these read-only queries in the Supabase SQL editor: `select table_name from information_schema.tables where table_schema = 'public';` (must not list `users`, `businesses` or the other BootPulse tables) and `select * from drizzle.__drizzle_migrations;` (an error "schema does not exist" is expected on a fresh project). Then set `DIRECT_URL` locally to the hosted project's direct or session-pooler string and run `npm run db:migrate`. This creates the tables, enables row-level security with no policies, and revokes Data API access.
 2. **Auth settings** (Supabase dashboard > Authentication):
    - Site URL: your Vercel URL. Redirect URLs: `<vercel-url>/**` and `http://localhost:3000/**`.
    - Email provider: confirm email on, minimum password length 8.

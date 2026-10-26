@@ -28,7 +28,12 @@ export type ItemInput = z.input<typeof itemInputSchema>;
 type ValidationError = { error: string };
 
 function validationError(error: z.ZodError): ValidationError {
-  return { error: error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join(' ') };
+  return { error: error.issues
+      .map((issue) => {
+        const field = issue.path.join('.');
+        return field ? `${field.charAt(0).toUpperCase()}${field.slice(1)}: ${issue.message}` : issue.message;
+      })
+      .join(' ') };
 }
 
 async function requireUser() {
